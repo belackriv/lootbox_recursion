@@ -1,0 +1,2 @@
+class WoodLootBox < LootBox
+end

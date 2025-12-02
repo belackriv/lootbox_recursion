@@ -1,0 +1,2 @@
+class IronLootBox < LootBox
+end

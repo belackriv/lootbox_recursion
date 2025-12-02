@@ -17,11 +17,43 @@ services:
 
     # Use "forwardPorts" in **devcontainer.json** to forward an app port locally.
     # (Adding the "ports" property to this file will not forward from a Codespace.)
-    # (DO add port forwards if you are not using vscode)
+    # (Belac: DO add port forwards if you are not using vscode)
     ports:
       - "3000:3000"
+      - "3036:3036"
+      - "3100:3100"
     depends_on:
       - selenium
+      - db_dev
+      - db_test
+    environment:
+      DATABASE_HOST: db_dev # Link to the database service
+      DATABASE_USER: dev_user
+      DATABASE_PASSWORD: dev_pass
+      DATABASE_NAME: lootbox_recursion_dev
+    sysctls:
+      net.ipv6.conf.all.disable_ipv6: 0
+      net.ipv6.conf.all.forwarding: 1
   selenium:
     image: selenium/standalone-chromium
     restart: unless-stopped
+  db_dev:
+    image: postgres:18-alpine # Or a specific version you prefer
+    environment:
+      POSTGRES_DB: lootbox_recursion_dev # Name of your development database
+      POSTGRES_USER: dev_user # Username for the database
+      POSTGRES_PASSWORD: dev_pass # Password for the database
+    volumes:
+      - db_dev_data:/var/lib/postgresql/data # Persistent storage for database data
+  db_test:
+    image: postgres:18-alpine # Or a specific version you prefer
+    environment:
+      POSTGRES_DB: lootbox_recursion_test # Name of your test database
+      POSTGRES_USER: test_user # Username for the database
+      POSTGRES_PASSWORD: test_pass # Password for the database
+    volumes:
+      - db_test_data:/var/lib/postgresql/data # Persistent storage for database data
+
+volumes:
+  db_dev_data:
+  db_test_data:

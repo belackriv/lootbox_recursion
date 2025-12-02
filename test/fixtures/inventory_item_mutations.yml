@@ -1,0 +1,11 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  delta: 1
+  slot: 1
+  user: one
+
+two:
+  delta: 1
+  slot: 1
+  user: two

@@ -1,0 +1,45 @@
+player_actions:
+  - name: "scavenge"
+    label: "Scavenge"
+    disabled: false
+    revealed: true
+    cooldown: 5
+    on_cooldown_until: null
+    cast_time: 5
+    choices: []
+    requirements: []
+    reveal_requirements: []
+
+  - name: "craft"
+    label: "Craft"
+    disabled: true
+    revealed: true
+    cooldown: 5
+    on_cooldown_until: null
+    cast_time: 5
+    choices: []
+    requirements:
+      - check: "inventory_items"
+        for_item_type: "WoodInventoryItem"
+        condition: "gt"
+        value: 50
+      - check: "inventory_items"
+        for_item_type: "IronInventoryItem"
+        condition: "gt"
+        value: 50
+    reveal_requirements: []
+
+  - name: "use"
+    label: "Use"
+    disabled: true
+    revealed: true
+    cooldown: 5
+    on_cooldown_until: null
+    cast_time: 5
+    choices: []
+    requirements:
+      - check: "inventory_items"
+        for_item_type: "LootBoxInventoryItem"
+        condition: "gt"
+        value: 1
+    reveal_requirements: []

@@ -1,0 +1,13 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  type: 
+  count: 1
+  claimed: false
+  loot_box: one
+
+two:
+  type: 
+  count: 1
+  claimed: false
+  loot_box: two

@@ -1,41 +1,58 @@
-# SQLite. Versions 3.8.0 and up are supported.
-#   gem install sqlite3
-#
-#   Ensure the SQLite 3 gem is defined in your Gemfile
-#   gem "sqlite3"
-#
 default: &default
-  adapter: sqlite3
+  adapter: postgresql
   max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
   timeout: 5000
 
 development:
-  <<: *default
-  database: storage/development.sqlite3
+  primary: &dev_main
+    <<: *default
+    database: <%= ENV.fetch("DATABASE_NAME") { "lootbox_recursion_dev" } %>
+    username: <%= ENV.fetch("DATABASE_USER") { "dev_user" } %>
+    password: <%= ENV.fetch("DATABASE_PASSWORD") { "dev_pass" } %>
+    host: <%= ENV.fetch("DATABASE_HOST") { "db_dev" } %> # Matches the service name in docker-compose.yml
+  queue:
+    <<: *dev_main
+  cable:
+    <<: *dev_main
 
-# Warning: The database defined as "test" will be erased and
-# re-generated from your development database when you run "rake".
-# Do not set this db to the same as development or production.
 test:
+  # Warning: The database defined as "test" will be erased and
+  # re-generated from your development database when you run "rake".
+  # Do not set this db to the same as development or production.
   <<: *default
-  database: storage/test.sqlite3
+  database: lootbox_recursion_test
+  username: test_user
+  password: test_pass
+  host: db_test
 
+production:
+  primary: &prod_main
+    <<: *default
+    database: lootbox_recursion_prod
+    username: <%= ENV["PRODUCTION_DATABASE_USER"] %>
+    password: <%= ENV["PRODUCTION_DATABASE_PASSWORD"] %>
+    host: <%= ENV["PRODUCTION_DATABASE_HOST"] %>
+  queue:
+    <<: *prod_main
+  cable:
+    <<: *prod_main
 
 # Store production database in the storage/ directory, which by default
 # is mounted as a persistent Docker volume in config/deploy.yml.
-production:
-  primary:
-    <<: *default
-    database: storage/production.sqlite3
-  cache:
-    <<: *default
-    database: storage/production_cache.sqlite3
-    migrations_paths: db/cache_migrate
-  queue:
-    <<: *default
-    database: storage/production_queue.sqlite3
-    migrations_paths: db/queue_migrate
-  cable:
-    <<: *default
-    database: storage/production_cable.sqlite3
-    migrations_paths: db/cable_migrate
+#
+#production:
+#  primary:
+#    <<: *default
+#    database: storage/production.sqlite3
+#  cache:
+#    <<: *default
+#    database: storage/production_cache.sqlite3
+#    migrations_paths: db/cache_migrate
+#  queue:
+#    <<: *default
+#    database: storage/production_queue.sqlite3
+#    migrations_paths: db/queue_migrate
+#  cable:
+#    <<: *default
+#    database: storage/production_cable.sqlite3
+#    migrations_paths: db/cable_migrate
