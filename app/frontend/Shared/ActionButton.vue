@@ -9,21 +9,21 @@ const playerActionsChannel = inject<PlayerActionsChannel>(
     "playerActionsChannel",
 );
 const castTimeProgress = ref<number>(0);
-const isOnCooldownUntil = ref<Date>(new Date());
+const onCooldownUntil = ref<Date>(new Date());
 
 const onClick = () => {
     const clickedAt = new Date();
-    if (isOnCooldownUntil.value > clickedAt || castTimeProgress.value > 0) {
+    if (onCooldownUntil.value > clickedAt || castTimeProgress.value > 0) {
         return false;
     }
     const store = usePlayerStore();
     store.performPlayerAction({ ...props }, null, playerActionsChannel);
 
-    isOnCooldownUntil.value = new Date(
+    onCooldownUntil.value = new Date(
         clickedAt.getTime() + props.cooldown * 1000,
     );
-    const castStartTime = performance.now();
 
+    const castStartTime = performance.now();
     function animationLoop() {
         const currentTime = performance.now();
         castTimeProgress.value =

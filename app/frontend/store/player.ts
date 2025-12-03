@@ -48,10 +48,8 @@ export const usePlayerStore = defineStore("player", () => {
     for (let i = 0; i < inventoryMutations.length; i++) {
       const { delta, slot, itemType, applied } = inventoryMutations[i];
       if (!applied) {
-        console.log("skipped not applied mutation", inventoryMutations[i]);
         continue;
       }
-      console.log("applying mutation", inventoryMutations[i]);
       const rowIndex = Math.floor(slot / inventoryRowLength);
       const columnIndex = slot % inventoryRowLength;
 
