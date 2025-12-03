@@ -72,7 +72,6 @@ class User < ApplicationRecord
   end
 
   def perform_action(player_action_name, action_data)
-    #refactor this to use new player actions state
     player_action = get_player_actions.find { |action| action.name == player_action_name }
     if player_action.on_cooldown_until and player_action.on_cooldown_until > Time.current
       p "Action is on cooldown"
