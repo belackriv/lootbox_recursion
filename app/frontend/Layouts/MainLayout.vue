@@ -13,9 +13,7 @@ const { loginPath = "", logoutPath = "" } = defineProps<{
 <template>
     <header class="columns-2 m-2">
         <div>
-            <p>
-                Welcome to Loot Box Recusion, {{ currentUser?.email_address }}
-            </p>
+            <p>Welcome to Loot Box Recusion, {{ currentUser?.emailAddress }}</p>
         </div>
         <nav class="flex justify-end">
             <NavLink url="/" label="Home" />

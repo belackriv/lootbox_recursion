@@ -29,12 +29,25 @@ export type PlayerAction = {
   name: string;
   label: string;
   disabled: boolean;
+  revealed: boolean;
   cooldown: number;
+  onCooldownUntil?: string | null;
   castTime: number;
+  choices: Array<PlayerActionChoice>;
+  requirements: Array<PlayerActionReqiurement>;
+  revealRequirements: Array<PlayerActionReqiurement>;
 };
 
 export type PlayerActionData = {
-  [key: string]: string;
+  [key: string]: string | number | null;
+};
+
+export type PlayerActionChoice = {
+  [key: string]: string | number | null;
+};
+
+export type PlayerActionReqiurement = {
+  [key: string]: string | number | null;
 };
 
 export type InventoryMutation = {

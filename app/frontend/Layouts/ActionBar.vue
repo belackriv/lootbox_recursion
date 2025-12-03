@@ -7,15 +7,16 @@ defineProps<{
 }>();
 // using v-bind="action" leads to a warning with onCooldownUntil
 // seems like it is a taken event handler name or something
+// :name="action.name"
+// :label="action.label"
+// :disabled="action.disabled"
+// :cooldown="action.cooldown"
+// :castTime="action.castTime"
 </script>
 <template>
     <ActionButton
         v-for="action in availableActions"
-        :name="action.name"
-        :label="action.label"
-        :disabled="action.disabled"
-        :cooldown="action.cooldown"
-        :castTime="action.castTime"
+        v-bind="action"
         :key="action.name"
     />
 </template>
