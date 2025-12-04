@@ -93,4 +93,13 @@ class User < ApplicationRecord
   def get_scavenge_add_mod
     return 1
   end
+
+  def get_craft_choices
+    craft_choices = [{name: 'lootbox', label: 'Lootbox'}]
+    return craft_choices
+  end
+
+  def craft(action_data)
+    p 'crafting'
+  end
 end

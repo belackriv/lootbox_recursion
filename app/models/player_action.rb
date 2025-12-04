@@ -22,7 +22,8 @@ class PlayerAction
 
   def update(user)
     update_disabled(user)
-
+    update_revealed(user)
+    update_choices(user)
   end
 
   def update_disabled(user)
@@ -48,7 +49,15 @@ class PlayerAction
         end
       end
     end
-    revealed = action_revealed
+    self.revealed = action_revealed
+  end
+
+  def update_choices(user)
+    action_get_choices_method_name = 'get_' << name << '_choices'
+    if(User.method_defined?(action_get_choices_method_name))
+      choices =  user.send(action_get_choices_method_name)
+      self.choices = choices
+    end
   end
 
   def check_value_by_condition(check_value, condition, compare_value)
