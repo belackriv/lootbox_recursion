@@ -62,7 +62,7 @@ class User < ApplicationRecord
 
   def get_first_empty_inventory_slot
     last_slot_num = -1
-    inventory_items.order(slot: :asc).find_each do |item|
+    inventory_items.order(slot: :asc).each do |item|
       if (last_slot_num + 1) < item.slot
         return last_slot_num + 1
       end
@@ -78,7 +78,8 @@ class User < ApplicationRecord
     else
       player_action.on_cooldown_until = Time.current + player_action.cooldown
       save_player_action_state(player_action)
-      send(player_action_name, action_data)
+
+      PerformPlayerActionJob.set(wait: player_action.cast_time.seconds).perform_later(self, player_action_name, action_data)
     end
   end
 
@@ -95,11 +96,35 @@ class User < ApplicationRecord
   end
 
   def get_craft_choices
-    craft_choices = [{name: 'lootbox', label: 'Lootbox'}]
+    craft_choices = [{class_name: 'LootBox', label: 'Lootbox'}]
     return craft_choices
   end
 
   def craft(action_data)
-    p 'crafting'
+     Object.const_get(action_data['class_name']).craft(self, action_data)
+  end
+
+  def remove_inventory(class_name, count)
+    item_count = inventory_items.where(type: class_name).sum(:count)
+    if(item_count < count)
+      return []
+    end
+
+    mutations = []
+    inventory_items.where(type: class_name).order(slot: :desc).each do |inventory_item|
+      removed = [inventory_item.count, count].min
+
+      mutation = InventoryItemMutation.new(user: self, item_type: class_name, slot: inventory_item.slot, delta: (removed * -1))
+      InventoryItem::applyMutation(mutation)
+      mutation.applied = true
+      mutation.save
+      mutations << mutation
+      count = count - removed
+      if(count === 0)
+        break
+      end
+    end
+    inventory_items.where(type: class_name, count: 0).destroy_all
+    return mutations
   end
 end

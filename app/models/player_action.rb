@@ -30,8 +30,8 @@ class PlayerAction
     action_disabled = false
     requirements.each do |req|
       if req['for_item_type']
-        itemCount = user.send(req['check']).where(type: req['for_item_type']).sum(:count)
-        if !check_value_by_condition(itemCount, req['condition'], req['value'])
+        item_count = user.send(req['check']).where(type: req['for_item_type']).sum(:count)
+        if !check_value_by_condition(item_count, req['condition'], req['value'])
           action_disabled = true
         end
       end
@@ -43,8 +43,8 @@ class PlayerAction
     action_revealed = true
     reveal_requirements.each do |req|
       if req['for_item_type']
-        itemCount = user.send(req['check']).where(type: req['for_item_type']).sum(:count)
-        if !check_value_by_condition(itemCount, req['condition'], req['value'])
+        item_count = user.send(req['check']).where(type: req['for_item_type']).sum(:count)
+        if !check_value_by_condition(item_count, req['condition'], req['value'])
           action_revealed = false
         end
       end

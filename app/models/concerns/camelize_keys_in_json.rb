@@ -8,6 +8,6 @@ module CamelizeKeysInJson
   end
 
   def camelize_keys(hash)
-    hash.deep_transform_keys { |k| k.camelize(:lower) }
+    return hash.deep_transform_keys { |k| k.camelize(:lower) }
   end
 end
