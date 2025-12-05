@@ -1,6 +1,9 @@
 import { createInertiaApp } from "@inertiajs/vue3";
 import { createApp, DefineComponent, h } from "vue";
 import { createPinia } from "pinia";
+import Unicon from "vue-unicons";
+import { uniAngleDoubleUp, uniAngleDoubleDown } from "vue-unicons/dist/icons";
+
 import MainLayout from "@/Layouts/MainLayout.vue";
 import ActionCable from "@/services/actionCable.ts";
 
@@ -36,10 +39,14 @@ createInertiaApp({
   setup({ el, App, props, plugin }) {
     const pinia = createPinia();
     console.log(props);
+
+    Unicon.add([uniAngleDoubleUp, uniAngleDoubleDown]);
+
     createApp({ render: () => h(App, props) })
       .use(plugin)
       .use(ActionCable)
       .use(pinia)
+      .use(Unicon)
       .mount(el);
   },
 
@@ -63,7 +70,7 @@ createInertiaApp({
     console.error(
       "Missing root element.\n\n" +
         "If you see this error, it probably means you loaded Inertia.js on non-Inertia pages.\n" +
-        'Consider moving <%= vite_javascript_tag "inertia" %> to the Inertia-specific layout instead.',
+        'Consider moving <%= vite_javascript_tag "inertia" %> to the Inertia-specific layout instead.'
     );
   }
 });

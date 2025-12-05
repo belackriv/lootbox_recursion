@@ -43,8 +43,12 @@ export type PlayerActionData = {
 };
 
 export type PlayerActionChoice = {
+  name: string;
+  label: string;
   [key: string]: string | number | null;
 };
+
+export type PlayerCraftingChoices = Array<PlayerActionChoice>;
 
 export type PlayerActionReqiurement = {
   [key: string]: string | number | null;

@@ -5,6 +5,7 @@ import { usePlayerStore } from "@/store/player.ts";
 import PlayerActionsChannel from "@/channels/playerActions.ts";
 
 const props = defineProps<PlayerAction>();
+
 const playerActionsChannel = inject<PlayerActionsChannel>(
     "playerActionsChannel",
 );
@@ -36,10 +37,14 @@ const performAction = (actionData: PlayerActionData | null) => {
 };
 
 const onClick = () => {
+    if (props.name === "use") {
+        //todo: implement use (should it have cooldown?)
+        return false;
+    }
     if (onCooldown.value || castTimeProgress.value > 0) {
         return false;
     }
-    if (props.choices) performAction(null);
+    performAction(null);
 };
 </script>
 
