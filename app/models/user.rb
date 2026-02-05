@@ -1,15 +1,26 @@
 class User < ApplicationRecord
-  include CamelizeKeysInJson
 
   has_secure_password
   has_many :sessions, dependent: :destroy
   has_many :inventory_items, dependent: :destroy
   has_many :loot_boxes, dependent: :destroy
   has_many :player_action_states, dependent: :destroy
+  has_one :entity
+  delegate :inventory_items, to: :entity
 
   normalizes :email_address, with: ->(e) { e.strip.downcase }
 
   attr_accessor :player_actions
+
+  def to_jbuilder(tags = ['default'])
+    Jbuilder.new do |jbuilder|
+      if tags.include?('default')
+        jbuilder.extract!(self, :id, :email_address)
+      end
+    end
+  end
+
+  BASE_INVENTORY_SLOTS = 50
 
   def get_player_actions
     if(@player_actions.nil?)
@@ -51,24 +62,12 @@ class User < ApplicationRecord
     player_action_state.save!
   end
 
-  def get_inventory_slot_for_type_and_count(item_type, item_count)
-    stack_size =  Object.const_get(item_type)::STACK_SIZE
-    inventory_item = inventory_items.where(type: item_type, count: ...(stack_size - item_count)).first()
-    if inventory_item.nil?
-      return get_first_empty_inventory_slot
-    end
-    return inventory_item.slot
+  def get_inventory_slot_count
+    return User::BASE_INVENTORY_SLOTS
   end
 
   def get_first_empty_inventory_slot
-    last_slot_num = -1
-    inventory_items.order(slot: :asc).each do |item|
-      if (last_slot_num + 1) < item.slot
-        return last_slot_num + 1
-      end
-      last_slot_num += 1
-    end
-    return last_slot_num + 1
+    return entity.inventory_slots.where(inventory_item: nil).order(slot: :asc).find
   end
 
   def perform_action(player_action_name, action_data)
@@ -105,26 +104,11 @@ class User < ApplicationRecord
   end
 
   def remove_inventory(class_name, count)
-    item_count = inventory_items.where(type: class_name).sum(:count)
-    if(item_count < count)
-      return []
-    end
-
-    mutations = []
-    inventory_items.where(type: class_name).order(slot: :desc).each do |inventory_item|
-      removed = [inventory_item.count, count].min
-
-      mutation = InventoryItemMutation.new(user: self, item_type: class_name, slot: inventory_item.slot, delta: (removed * -1))
-      InventoryItem::applyMutation(mutation)
-      mutation.applied = true
-      mutation.save
-      mutations << mutation
-      count = count - removed
-      if(count === 0)
-        break
-      end
-    end
-    inventory_items.where(type: class_name, count: 0).destroy_all
-    return mutations
+    return entity.remove_inventory(class_name, count)
   end
+
+  def add_inventory(class_name, count)
+    return entity.add_inventory(class_name, count)
+  end
+
 end

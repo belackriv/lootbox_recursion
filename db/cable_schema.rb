@@ -10,9 +10,16 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_01_000123) do
+ActiveRecord::Schema[8.1].define(version: 2025_12_08_144844) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
+
+  create_table "entities", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.bigint "user_id", null: false
+    t.index ["user_id"], name: "index_entities_on_user_id", unique: true
+  end
 
   create_table "inventory_item_mutations", force: :cascade do |t|
     t.boolean "applied", default: false
@@ -34,6 +41,17 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_01_000123) do
     t.bigint "user_id", null: false
     t.index ["slot", "user_id"], name: "unique_inventory_items_on_slot_and_user_id", unique: true
     t.index ["user_id"], name: "index_inventory_items_on_user_id"
+  end
+
+  create_table "inventory_slots", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "entity_id", null: false
+    t.bigint "inventory_item_id"
+    t.integer "slot"
+    t.datetime "updated_at", null: false
+    t.index ["entity_id"], name: "index_inventory_slots_on_entity_id"
+    t.index ["inventory_item_id"], name: "index_inventory_slots_on_inventory_item_id", unique: true
+    t.index ["slot", "entity_id"], name: "unique_inventory_slot_on_slot_and_entity_id", unique: true
   end
 
   create_table "loot_box_loots", force: :cascade do |t|
@@ -215,8 +233,11 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_01_000123) do
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
   end
 
+  add_foreign_key "entities", "users"
   add_foreign_key "inventory_item_mutations", "users"
   add_foreign_key "inventory_items", "users"
+  add_foreign_key "inventory_slots", "entities"
+  add_foreign_key "inventory_slots", "inventory_items"
   add_foreign_key "loot_box_loots", "inventory_items"
   add_foreign_key "loot_box_loots", "loot_boxes"
   add_foreign_key "loot_boxes", "users"

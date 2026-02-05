@@ -1,23 +1,23 @@
 <script setup lang="ts">
 import ActionBar from "@/Layouts/ActionBar.vue";
 import InventoryGrid from "@/Layouts/InventoryGrid.vue";
-import { PlayerAction, InventoryItem } from "@/types/index.ts";
+import { PlayerAction, InventorySlot } from "@/types/index.ts";
 
 defineProps<{
-    availableActions: Array<PlayerAction>;
-    inventoryItems: Array<InventoryItem>;
+  actions: Array<PlayerAction>;
+  inventory: Array<InventorySlot>;
 }>();
 </script>
 
 <template>
+  <div>
     <div>
-        <div>
-            <h1>Actions</h1>
-            <ActionBar :availableActions="availableActions" />
-        </div>
-        <div>
-            <h1>Inventory</h1>
-            <InventoryGrid :inventoryItems="inventoryItems" />
-        </div>
+      <h1>Actions</h1>
+      <ActionBar :actions="actions" />
     </div>
+    <div>
+      <h1>Inventory</h1>
+      <InventoryGrid :inventory="inventory" />
+    </div>
+  </div>
 </template>

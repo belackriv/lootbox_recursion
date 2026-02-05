@@ -12,15 +12,29 @@ export type PlayerStore = {
   availableActions: Array<PlayerAction>;
 };
 
+export type User = {
+  id: number;
+  emailAdress: string;
+};
+
+export type Entity = {
+  id: number;
+  user: User | null;
+};
+
 export type InventoryItem = {
   type: string;
   count: number;
-  slot: number;
 };
 
 export type InventorySlot = {
-  item: InventoryItem | null;
+  inventoryItem: InventoryItem | null;
   slot: number;
+  //entity: Entity;
+};
+
+export type InventoryGridSlot = {
+  slot: InventorySlot;
   row: number;
   column: number;
 };
@@ -55,8 +69,8 @@ export type PlayerActionReqiurement = {
 };
 
 export type InventoryMutation = {
-  delta: number;
-  slot: number;
+  inventorySlot: InventorySlot;
   itemType: string | null;
+  delta: number;
   applied: boolean;
 };

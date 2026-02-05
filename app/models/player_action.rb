@@ -2,8 +2,6 @@ class PlayerAction
   include ActiveModel::Model
   include ActiveModel::Attributes
   include ActiveModel::AttributeAssignment
-  include ActiveModel::Serializers::JSON
-  include CamelizeKeysInJson
 
   attribute :name, :string
   attribute :label, :string
@@ -15,6 +13,25 @@ class PlayerAction
   attribute :choices, ArrayType
   attribute :requirements, ArrayType
   attribute :reveal_requirements, ArrayType
+
+  def to_jbuilder(tags = ['default'])
+    Jbuilder.new do |jbuilder|
+      if tags.include?('default')
+        jbuilder.extract!(self,
+          :name,
+          :label,
+          :disabled,
+          :revealed,
+          :cooldown,
+          :on_cooldown_until,
+          :cast_time,
+          :choices,
+          :requirements,
+          :reveal_requirements
+        )
+      end
+    end
+  end
 
   def persisted?
     false

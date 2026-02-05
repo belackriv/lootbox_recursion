@@ -13,13 +13,13 @@ const toggleCraftingTray = () => {
 };
 
 const props = defineProps<{
-  availableActions: Array<PlayerAction>;
+  actions: Array<PlayerAction>;
 }>();
 
-const nonCraftingActions = props.availableActions.filter((action) => {
+const nonCraftingActions = props.actions.filter((action) => {
   return action.name !== "craft";
 });
-const craftingAction = props.availableActions.find((action) => {
+const craftingAction = props.actions.find((action) => {
   return action.name === "craft";
 });
 </script>

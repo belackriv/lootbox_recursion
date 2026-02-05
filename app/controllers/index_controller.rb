@@ -4,12 +4,14 @@ class IndexController < InertiaController
   def index
     if authenticated?
       render inertia: 'Index/Index', props: {
-        currentUser: Current.user.as_json(only: [:id, :email_address]),
+        currentUser: Current.user.to_jbuilder.attributes!,
         logoutPath: session_path,
-        inventoryItems: Current.user.inventory_items.order(:slot).limit(100).as_json(
-          only: [:id, :created_at, :type, :count, :slot]
-        ),
-        availableActions: Current.user.get_available_actions.as_json
+        inventory: Current.user.entity.inventory_slots.order(:slot).limit(100).map do |slot|
+          slot.to_jbuilder.attributes!
+        end,
+        actions: Current.user.get_available_actions.map do |action|
+          action.to_jbuilder.attributes!
+        end
       }
     else
       render inertia: 'Index/NotLoggedIn', props: {
