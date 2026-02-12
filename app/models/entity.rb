@@ -43,7 +43,18 @@ class Entity < ApplicationRecord
         break
       end
     end
-    InventoryItem.where(entity: self, type: class_name, count: 0).destroy_all
+
+    # Clear any inventory_slots that reference items with zero count before destroying those items
+    zero_items = InventoryItem.where(entity: self, type: class_name, count: 0)
+    zero_items.each do |it|
+      if it.inventory_slot
+        slot = it.inventory_slot
+        slot.inventory_item = nil
+        slot.save!
+      end
+    end
+    zero_items.destroy_all
+
     return mutations
   end
 
