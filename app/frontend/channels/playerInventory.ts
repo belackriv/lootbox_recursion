@@ -13,16 +13,32 @@ class PlayerInventoryChannel {
     this.subscription = cable.subscriptions.create(
       { channel: "PlayerInventoryChannel" },
       {
-        connected: function (message) {},
-        disconnected: function (message) {},
-        received: this.receive,
-      },
+        connected: () => {
+          try {
+            // send a lightweight client ping to the server
+            this.subscription?.send({
+              type: "client_ping",
+              timestamp: Date.now(),
+            });
+          } catch (e) {
+            // ignore connection ping errors
+          }
+        },
+        disconnected: () => {
+          // handle disconnection silently
+        },
+        received: (data: any) => this.receive(data),
+      }
     );
   }
 
   receive(mutations: Array<InventoryMutation>) {
-    const store = usePlayerStore();
-    store.mutateInventory(mutations);
+    try {
+      const store = usePlayerStore();
+      store.mutateInventory(mutations);
+    } catch (err) {
+      // silently handle mutation application errors
+    }
   }
 
   send(mutations: Array<InventoryMutation>) {

@@ -22,6 +22,8 @@ class InventoryItem < ApplicationRecord
     item_type = InventoryItem::SCAVENGE_TYPES.sample;
     item_count = rand(user.get_scavenge_range_mod) + user.get_scavenge_add_mod
     mutations = user.add_inventory(item_type, item_count)
-    PlayerInventoryChannel.broadcast_to(user, mutations)
+    # Serialize mutations to camelCase using to_jbuilder before broadcasting
+    mutations_payload = mutations.map { |mutation| mutation.to_jbuilder.attributes! }
+    PlayerInventoryChannel.broadcast_to(user, mutations_payload)
   end
 end

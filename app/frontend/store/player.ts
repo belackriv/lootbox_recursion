@@ -48,11 +48,102 @@ export const usePlayerStore = defineStore("player", () => {
   };
 
   const mutateInventory = (inventoryMutations: Array<InventoryMutation>) => {
-    for (let i = 0; i < inventoryMutations.length; i++) {
-      const { delta, inventorySlot, itemType, applied } = inventoryMutations[i];
+    for (let i = 0; i < (inventoryMutations ?? []).length; i++) {
+      const mutation = inventoryMutations[i] as any;
+
+      // skip unapplied mutations
+      const applied =
+        mutation.applied ?? mutation.applied === undefined
+          ? true
+          : mutation.applied;
       if (!applied) {
         continue;
       }
+
+      // Support both camelCase and snake_case payloads from the server
+      const invSlot = mutation.inventorySlot ?? mutation.inventory_slot ?? null;
+      const slotNumber =
+        invSlot?.slot ??
+        mutation.slot ??
+        (invSlot?.id ? invSlot?.slot : undefined);
+
+      if (slotNumber === undefined || slotNumber === null) {
+        // nothing we can do without a slot number
+        continue;
+      }
+
+      const rowIndex = Math.floor(slotNumber / inventoryRowLength);
+      const columnIndex = slotNumber % inventoryRowLength;
+
+      // Defensive: ensure row/col exist
+      if (
+        !inventory.value.rows[rowIndex] ||
+        !inventory.value.rows[rowIndex][columnIndex]
+      ) {
+        continue;
+      }
+
+      const gridSlot = inventory.value.rows[rowIndex][columnIndex];
+
+      // Prefer the server-sent inventory item payload if present
+      const serverItem =
+        invSlot?.inventoryItem ?? invSlot?.inventory_item ?? null;
+
+      if (serverItem === null) {
+        // If server didn't include the nested item, fallback to itemType/delta
+        const itemType = mutation.itemType ?? mutation.item_type ?? null;
+        const delta = mutation.delta ?? 0;
+
+        if (itemType && delta) {
+          // If there is already an item of this type in the slot, update its count
+          const existing = gridSlot.slot.inventoryItem;
+          if (existing && existing.type === itemType) {
+            const newCount = (existing.count ?? 0) + delta;
+            if (newCount <= 0) {
+              // replace reference with null so watchers/reactivity see the change
+              gridSlot.slot.inventoryItem = null;
+            } else {
+              // replace the object reference with a new object so Vue reactivity
+              // and reference-based watchers are triggered
+              gridSlot.slot.inventoryItem = {
+                type: existing.type,
+                count: newCount,
+              };
+            }
+          } else if (delta > 0) {
+            // create new inventory item representation (new object reference)
+            gridSlot.slot.inventoryItem = { type: itemType, count: delta };
+          } else {
+            // negative delta but no existing item -> nothing to do
+          }
+        } else {
+          // If no more details, and delta indicates removal, clear the slot
+          if ((mutation.delta ?? 0) < 0) {
+            gridSlot.slot.inventoryItem = null;
+          }
+        }
+      } else {
+        // server provided full item; normalize keys and assign
+        const normalized = {
+          type:
+            serverItem.type ??
+            serverItem["type"] ??
+            serverItem["_type"] ??
+            null,
+          count: serverItem.count ?? serverItem["count"] ?? 0,
+        } as any;
+
+        // If count is zero or null, clear the slot
+        if (!normalized.type || !normalized.count) {
+          gridSlot.slot.inventoryItem = null;
+        } else {
+          // assign normalized (new object) to ensure watchers/reactivity pick up change
+          gridSlot.slot.inventoryItem = normalized;
+        }
+      }
+
+      // Ensure slot metadata is in sync
+      gridSlot.slot.slot = slotNumber;
     }
   };
 

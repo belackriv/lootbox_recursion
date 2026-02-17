@@ -8,9 +8,9 @@ defineProps<{ slots: Array<InventoryGridSlot> }>();
 <template>
   <div class="border-s-slate-900 border-2 flex w-161 bg-slate-300">
     <InventoryItemSlot
-      v-for="(slot, index) in slots"
-      :key="index"
-      :grid-slot="slot"
+      v-for="gridSlot in slots"
+      :key="gridSlot.slot.slot"
+      :grid-slot="gridSlot"
     />
   </div>
 </template>

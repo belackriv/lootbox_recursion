@@ -16,18 +16,19 @@ class PlayerActionsChannel {
         connected: function (message) {},
         disconnected: function (message) {},
         received: this.receive,
-      },
+      }
     );
   }
 
   receive(playerActions: Array<PlayerAction>) {
+    console.log("Received player actions:", playerActions);
     const store = usePlayerStore();
     store.updateAvailableActions(playerActions);
   }
 
   send(
     playerAction: PlayerAction,
-    playerActionData: PlayerActionData | null | undefined,
+    playerActionData: PlayerActionData | null | undefined
   ) {
     this.subscription?.send({
       playerAction: playerAction,

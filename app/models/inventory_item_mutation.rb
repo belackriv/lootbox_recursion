@@ -26,4 +26,19 @@ class InventoryItemMutation < ApplicationRecord
     save!
     return true
   end
+
+  def to_jbuilder(tags = ['default'])
+    Jbuilder.new do |jbuilder|
+      if tags.include?('default')
+        jbuilder.id id
+        jbuilder.itemType item_type
+        jbuilder.delta delta
+        jbuilder.applied applied
+        jbuilder.createdAt created_at
+        jbuilder.updatedAt updated_at
+        # Embed the full nested inventory_slot object so the frontend has slot number and inventory_item
+        jbuilder.inventorySlot inventory_slot.to_jbuilder.attributes!
+      end
+    end
+  end
 end

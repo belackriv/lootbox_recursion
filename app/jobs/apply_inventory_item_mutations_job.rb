@@ -9,6 +9,8 @@ class ApplyInventoryItemMutationsJob < ApplicationJob
         mutation.save
       end
     end
-    PlayerInventoryChannel.broadcast_to(user, mutations)
+    # Serialize mutations to camelCase using to_jbuilder before broadcasting
+    mutations_payload = mutations.map { |m| m.to_jbuilder.attributes! }
+    PlayerInventoryChannel.broadcast_to(user, mutations_payload)
   end
 end

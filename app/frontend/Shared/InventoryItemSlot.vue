@@ -4,8 +4,9 @@ import type { InventoryGridSlot } from "@/types/index.ts";
 
 const updated = ref(false);
 const props = defineProps<{ gridSlot: InventoryGridSlot }>();
-
+console.log(props.gridSlot);
 watch(props.gridSlot, () => {
+  console.log(props.gridSlot);
   updated.value = true;
   setTimeout(() => {
     updated.value = false;
@@ -17,7 +18,13 @@ watch(props.gridSlot, () => {
   <div
     class="w-16 h-16 flex-none border-2 border-slate-500 transition-border-color duration-500 hover:border-slate-300 relative"
   >
-    <div>{{ gridSlot.slot.inventoryItem?.type.slice(0, 1).toUpperCase() }}</div>
+    <div>
+      {{
+        gridSlot.slot.inventoryItem && gridSlot.slot.inventoryItem.type
+          ? gridSlot.slot.inventoryItem.type.slice(0, 1).toUpperCase()
+          : ""
+      }}
+    </div>
     <div>{{ gridSlot.slot.inventoryItem?.count }}</div>
     <Transition name="fade">
       <div

@@ -89,7 +89,9 @@ class LootBox < ApplicationRecord
       reason = 'exception' if reason.nil?
     ensure
       # Broadcast the mutations we have (on failure these will typically be empty because of rollback)
-      PlayerInventoryChannel.broadcast_to(user, mutations)
+      # Serialize mutations to camelCase using to_jbuilder before broadcasting
+      mutations_payload = mutations.map { |mutation| mutation.to_jbuilder.attributes! }
+      PlayerInventoryChannel.broadcast_to(user, mutations_payload)
     end
 
     # Log the crafted result so tests and runtime show why craft succeeded or failed

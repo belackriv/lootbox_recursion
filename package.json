@@ -3,9 +3,12 @@
   "type": "module",
   "devDependencies": {
     "@types/rails__actioncable": "^8.0.3",
+    "@vue/test-utils": "^2.0.0-rc.18",
     "vite": "^7.2.4",
     "vite-plugin-ruby": "^5.1.1",
-    "vite-tsconfig-paths": "^5.1.4"
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^1.0.0",
+    "jsdom": "^22.1.0"
   },
   "dependencies": {
     "@inertiajs/vue3": "^2.2.18",
@@ -23,6 +26,7 @@
     "vue-unicons": "^3.3.1"
   },
   "scripts": {
-    "check": "vue-tsc -p tsconfig.app.json && tsc -p tsconfig.node.json"
+    "check": "vue-tsc -p tsconfig.app.json && tsc -p tsconfig.node.json",
+    "test": "vitest"
   }
 }
