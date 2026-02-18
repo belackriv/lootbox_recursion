@@ -92,6 +92,10 @@ class LootBox < ApplicationRecord
       # Serialize mutations to camelCase using to_jbuilder before broadcasting
       mutations_payload = mutations.map { |mutation| mutation.to_jbuilder.attributes! }
       PlayerInventoryChannel.broadcast_to(user, mutations_payload)
+
+      # Trigger action state update so disabled state reflects new inventory
+      # This ensures the craft button (and other actions) update based on final inventory state
+      user.trigger_action_state_update
     end
 
     # Log the crafted result so tests and runtime show why craft succeeded or failed

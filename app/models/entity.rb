@@ -55,6 +55,9 @@ class Entity < ApplicationRecord
     end
     zero_items.destroy_all
 
+    # Trigger action state update so disabled states reflect new inventory
+    trigger_action_state_update
+
     return mutations
   end
 
@@ -80,7 +83,16 @@ class Entity < ApplicationRecord
       mutations.each do |mutation|
         mutation.apply!
       end
+
+      # Trigger action state update so disabled states reflect new inventory
+      trigger_action_state_update
     end
     return mutations
+  end
+
+  def trigger_action_state_update
+    if user
+      user.trigger_action_state_update
+    end
   end
 end

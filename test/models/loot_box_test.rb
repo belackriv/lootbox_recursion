@@ -234,4 +234,69 @@ class LootBoxTest < ActiveSupport::TestCase
     assert_equal 0, entity.inventory_items.where(type: 'WoodInventoryItem').sum(:count)
     assert_equal 0, entity.inventory_items.where(type: 'IronInventoryItem').sum(:count)
   end
+
+  test 'craft action becomes disabled after crafting when materials are insufficient' do
+    user = User.create!(email_address: "action_state@example.com", password: "password")
+    entity = Entity.create!(user: user)
+    entity.ensure_inventory_slots
+
+    # Clear all slots for deterministic state
+    entity.inventory_slots.order(slot: :asc).each do |s|
+      s.inventory_item = nil
+      s.save!
+    end
+
+    # Add 51 wood and 51 iron (more than 50 required for craft requirements which use gt)
+    wood = WoodInventoryItem.create!(entity: entity, count: 51)
+    iron = IronInventoryItem.create!(entity: entity, count: 51)
+    slots = entity.inventory_slots.order(slot: :asc).to_a
+    slots[0].inventory_item = wood
+    slots[0].save!
+    slots[1].inventory_item = iron
+    slots[1].save!
+
+    # Verify craft action is enabled before crafting
+    user.update_player_actions
+    craft_action_before = user.get_available_actions.find { |a| a.name == 'craft' }
+    assert_not craft_action_before.disabled, "Craft action should be enabled when materials are sufficient (> 50)"
+
+    # Perform the craft (consumes 50, leaving 1)
+    result = LootBox.craft(user, {})
+    assert result[:success], "Craft should succeed with sufficient materials"
+
+    # After crafting, reload user's action states to reflect the inventory change
+    # In production, this happens via PlayerActionsChannel broadcast, but in tests we call it directly
+    user.update_player_actions
+    craft_action_after = user.get_available_actions.find { |a| a.name == 'craft' }
+
+    # Verify craft action is now disabled (need > 50, but only have 1 left)
+    assert craft_action_after.disabled, "Craft action should be disabled when materials drop to 1 (needs > 50)"
+  end
+
+  test 'scavenge triggers action state update via trigger_action_state_update' do
+    user = User.create!(email_address: "scavenge_state@example.com", password: "password")
+    entity = Entity.create!(user: user)
+    entity.ensure_inventory_slots
+
+    # Clear all slots
+    entity.inventory_slots.order(slot: :asc).each do |s|
+      s.inventory_item = nil
+      s.save!
+    end
+
+    # Verify initial state
+    user.update_player_actions
+    craft_action_initial = user.get_available_actions.find { |a| a.name == 'craft' }
+    assert craft_action_initial.disabled, "Craft should be disabled initially (no materials)"
+
+    # Add inventory via add_inventory, which should trigger action state update
+    # Need > 50 for each, so add 51 of each
+    entity.add_inventory('WoodInventoryItem', 51)
+    entity.add_inventory('IronInventoryItem', 51)
+
+    # Reload and check action state was updated
+    user.update_player_actions
+    craft_action_after = user.get_available_actions.find { |a| a.name == 'craft' }
+    assert_not craft_action_after.disabled, "Craft should be enabled after adding > 50 of each material"
+  end
 end

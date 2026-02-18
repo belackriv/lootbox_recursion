@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import ActionButton from "@/Shared/ActionButton.vue";
 import CraftToggleButton from "@/Shared/CraftToggleButton.vue";
 import CraftActionButton from "@/Shared/CraftActionButton.vue";
@@ -16,11 +16,16 @@ const props = defineProps<{
   actions: Array<PlayerAction>;
 }>();
 
-const nonCraftingActions = props.actions.filter((action) => {
-  return action.name !== "craft";
+const nonCraftingActions = computed(() => {
+  return props.actions.filter((action) => {
+    return action.name !== "craft";
+  });
 });
-const craftingAction = props.actions.find((action) => {
-  return action.name === "craft";
+
+const craftingAction = computed(() => {
+  return props.actions.find((action) => {
+    return action.name === "craft";
+  });
 });
 </script>
 <template>

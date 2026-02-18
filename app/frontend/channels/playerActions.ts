@@ -13,17 +13,15 @@ class PlayerActionsChannel {
     this.subscription = cable.subscriptions.create(
       { channel: "PlayerActionsChannel" },
       {
-        connected: function (message) {},
-        disconnected: function (message) {},
-        received: this.receive,
+        connected: () => {},
+        disconnected: () => {},
+        received: (playerActions: Array<PlayerAction>) => {
+          console.log("Received player actions:", playerActions);
+          const store = usePlayerStore();
+          store.updateAvailableActions(playerActions);
+        },
       }
     );
-  }
-
-  receive(playerActions: Array<PlayerAction>) {
-    console.log("Received player actions:", playerActions);
-    const store = usePlayerStore();
-    store.updateAvailableActions(playerActions);
   }
 
   send(

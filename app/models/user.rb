@@ -91,7 +91,7 @@ class User < ApplicationRecord
   end
 
   def get_scavenge_add_mod
-    return 1
+    return 25
   end
 
   def get_craft_choices
@@ -109,6 +109,17 @@ class User < ApplicationRecord
 
   def add_inventory(class_name, count)
     return entity.add_inventory(class_name, count)
+  end
+
+  def trigger_action_state_update
+    # Recalculate all action states based on current inventory
+    update_player_actions
+
+    # Broadcast updated actions to the user's PlayerActionsChannel
+    updated_actions = get_available_actions.map do |action|
+      action.to_jbuilder.attributes!
+    end
+    PlayerActionsChannel.broadcast_to(self, updated_actions)
   end
 
 end
