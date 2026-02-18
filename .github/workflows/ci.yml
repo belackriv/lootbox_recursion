@@ -42,7 +42,7 @@ jobs:
         with:
           bundler-cache: true
 
-      - name: Ensure importmao is executable
+      - name: Ensure importmap is executable
         run: chmod +x bin/importmap
 
       - name: Scan for security vulnerabilities in JavaScript dependencies
@@ -99,9 +99,14 @@ jobs:
     #    ports:
     #      - 6379:6379
     #    options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
-    #  env:
-    #    DATABASE_URL: postgres://test_user:test_pass@localhost:5432/lootbox_recursion_test
-
+    env:
+      #    DATABASE_URL: postgres://test_user:test_pass@localhost:5432/lootbox_recursion_test
+      RAILS_ENV: test
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: test_user
+      PGPASSWORD: test_pass
+      PGDATABASE: lootbox_recursion_test
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
