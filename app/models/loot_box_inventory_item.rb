@@ -3,6 +3,7 @@ class LootBoxInventoryItem < InventoryItem
   # It is associated with the LootBox record that contains the actual loot contents.
   # This item type is non-stackable (STACK_SIZE = 1).
   STACK_SIZE = 1
+  DISPLAY_NAME = "Loot Box"
 
   belongs_to :loot_box, optional: true
 

@@ -90,6 +90,71 @@ class Entity < ApplicationRecord
     mutations
   end
 
+  def sort_and_compress_inventory!
+    ensure_inventory_slots
+
+    slots = inventory_slots.includes(:inventory_item).order(slot: :asc)
+    totals_by_type = Hash.new(0)
+
+    slots.each do |inventory_slot|
+      next if inventory_slot.inventory_item.nil?
+      next if inventory_slot.inventory_item.count.to_i <= 0
+
+      totals_by_type[inventory_slot.inventory_item.type] += inventory_slot.inventory_item.count.to_i
+    end
+
+    sorted_types = totals_by_type.keys.sort_by do |type|
+      [ Object.const_get(type).display_name.downcase, type ]
+    end
+
+    rebuilt_stacks = []
+    sorted_types.each do |type|
+      total_count = totals_by_type[type]
+      stack_size = Object.const_get(type)::STACK_SIZE
+
+      while total_count > 0
+        stack_count = [ stack_size, total_count ].min
+        rebuilt_stacks << { type: type, count: stack_count }
+        total_count -= stack_count
+      end
+    end
+
+    ApplicationRecord.transaction do
+      slots.each_with_index do |inventory_slot, index|
+        desired = rebuilt_stacks[index]
+
+        if desired.nil?
+          if inventory_slot.inventory_item
+            old_item = inventory_slot.inventory_item
+            inventory_slot.update!(inventory_item: nil)
+            old_item.destroy! if old_item.inventory_slot.nil?
+          end
+          next
+        end
+
+        current_item = inventory_slot.inventory_item
+        if current_item && current_item.type == desired[:type]
+          current_item.update!(count: desired[:count]) if current_item.count != desired[:count]
+        else
+          old_item = current_item
+          new_item = Object.const_get(desired[:type]).create!(entity: self, count: desired[:count])
+          inventory_slot.update!(inventory_item: new_item)
+
+          if old_item
+            old_item.destroy! if old_item.inventory_slot.nil?
+          end
+        end
+      end
+    end
+
+    trigger_action_state_update
+
+    {
+      item_types: sorted_types.length,
+      slots_used: rebuilt_stacks.length
+    }
+  end
+
   def trigger_action_state_update
     if user
       user.trigger_action_state_update

@@ -5,6 +5,18 @@ class InventoryItem < ApplicationRecord
   belongs_to :entity
   has_one :inventory_slot
 
+  def self.display_name
+    if const_defined?(:DISPLAY_NAME)
+      const_get(:DISPLAY_NAME)
+    else
+      name.sub(/InventoryItem\z/, "").underscore.humanize
+    end
+  end
+
+  def display_name
+    self.class.display_name
+  end
+
   def to_jbuilder(tags = [ "default" ])
     Jbuilder.new do |jbuilder|
       if tags.include?("default")
