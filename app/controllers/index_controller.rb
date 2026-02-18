@@ -3,7 +3,7 @@ class IndexController < InertiaController
 
   def index
     if authenticated?
-      render inertia: 'Index/Index', props: {
+      render inertia: "Index/Index", props: {
         currentUser: Current.user.to_jbuilder.attributes!,
         logoutPath: session_path,
         inventory: Current.user.entity.inventory_slots.order(:slot).limit(100).map do |slot|
@@ -14,7 +14,7 @@ class IndexController < InertiaController
         end
       }
     else
-      render inertia: 'Index/NotLoggedIn', props: {
+      render inertia: "Index/NotLoggedIn", props: {
         currentUser: nil,
         loginPath: new_session_path
       }

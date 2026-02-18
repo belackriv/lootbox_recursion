@@ -7,7 +7,7 @@ class PlayerActionsChannel < ApplicationCable::Channel
 
   def receive(data)
     data = snake_case_keys(data)
-    current_user.perform_action(data['player_action']['name'], data['player_action_data'])
+    current_user.perform_action(data["player_action"]["name"], data["player_action_data"])
   end
 
   def unsubscribed

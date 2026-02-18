@@ -1,5 +1,4 @@
 class User < ApplicationRecord
-
   has_secure_password
   has_many :sessions, dependent: :destroy
   has_many :inventory_items, dependent: :destroy
@@ -12,9 +11,9 @@ class User < ApplicationRecord
 
   attr_accessor :player_actions
 
-  def to_jbuilder(tags = ['default'])
+  def to_jbuilder(tags = [ "default" ])
     Jbuilder.new do |jbuilder|
-      if tags.include?('default')
+      if tags.include?("default")
         jbuilder.extract!(self, :id, :email_address)
       end
     end
@@ -23,7 +22,7 @@ class User < ApplicationRecord
   BASE_INVENTORY_SLOTS = 50
 
   def get_player_actions
-    if(@player_actions.nil?)
+    if @player_actions.nil?
       @player_actions = APP_DATA[:player_actions]
       @player_actions.each do |action|
           action.update(self)
@@ -32,15 +31,15 @@ class User < ApplicationRecord
     # load the user's player action state and update player_actions
     @player_actions.each do |action|
       player_action_state = PlayerActionState.where(user: self, player_action_name: action.name).first()
-      if(player_action_state)
+      if player_action_state
         action.assign_attributes(player_action_state.action_state)
       end
     end
-    return @player_actions
+    @player_actions
   end
 
   def get_available_actions
-    return get_player_actions.filter { |action| action.revealed == true }
+    get_player_actions.filter { |action| action.revealed == true }
   end
 
   def update_player_actions
@@ -55,7 +54,7 @@ class User < ApplicationRecord
 
   def save_player_action_state(player_action)
     player_action_state = PlayerActionState.where(user: self, player_action_name: player_action.name).first()
-    if(player_action_state.nil?)
+    if player_action_state.nil?
       player_action_state = PlayerActionState.new(user: self, player_action_name: player_action.name)
     end
     player_action_state.action_state = player_action.attributes
@@ -63,11 +62,11 @@ class User < ApplicationRecord
   end
 
   def get_inventory_slot_count
-    return User::BASE_INVENTORY_SLOTS
+    User::BASE_INVENTORY_SLOTS
   end
 
   def get_first_empty_inventory_slot
-    return entity.inventory_slots.where(inventory_item: nil).order(slot: :asc).find
+    entity.inventory_slots.where(inventory_item: nil).order(slot: :asc).find
   end
 
   def perform_action(player_action_name, action_data)
@@ -83,32 +82,32 @@ class User < ApplicationRecord
   end
 
   def scavenge(action_data)
-    InventoryItem::scavenge_item(self)
+    InventoryItem.scavenge_item(self)
   end
 
   def get_scavenge_range_mod
-    return 10
+    10
   end
 
   def get_scavenge_add_mod
-    return 25
+    25
   end
 
   def get_craft_choices
-    craft_choices = [{class_name: 'LootBox', label: 'Lootbox'}]
-    return craft_choices
+    craft_choices = [ { class_name: "LootBox", label: "Lootbox" } ]
+    craft_choices
   end
 
   def craft(action_data)
-     Object.const_get(action_data['class_name']).craft(self, action_data)
+     Object.const_get(action_data["class_name"]).craft(self, action_data)
   end
 
   def remove_inventory(class_name, count)
-    return entity.remove_inventory(class_name, count)
+    entity.remove_inventory(class_name, count)
   end
 
   def add_inventory(class_name, count)
-    return entity.add_inventory(class_name, count)
+    entity.add_inventory(class_name, count)
   end
 
   def trigger_action_state_update
@@ -121,5 +120,4 @@ class User < ApplicationRecord
     end
     PlayerActionsChannel.broadcast_to(self, updated_actions)
   end
-
 end

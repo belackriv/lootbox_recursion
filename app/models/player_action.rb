@@ -14,9 +14,9 @@ class PlayerAction
   attribute :requirements, ArrayType
   attribute :reveal_requirements, ArrayType
 
-  def to_jbuilder(tags = ['default'])
+  def to_jbuilder(tags = [ "default" ])
     Jbuilder.new do |jbuilder|
-      if tags.include?('default')
+      if tags.include?("default")
         jbuilder.extract!(self,
           :name,
           :label,
@@ -46,9 +46,9 @@ class PlayerAction
   def update_disabled(user)
     action_disabled = false
     requirements.each do |req|
-      if req['for_item_type']
-        item_count = user.send(req['check']).where(type: req['for_item_type']).sum(:count)
-        if !check_value_by_condition(item_count, req['condition'], req['value'])
+      if req["for_item_type"]
+        item_count = user.send(req["check"]).where(type: req["for_item_type"]).sum(:count)
+        if !check_value_by_condition(item_count, req["condition"], req["value"])
           action_disabled = true
         end
       end
@@ -59,9 +59,9 @@ class PlayerAction
   def update_revealed(user)
     action_revealed = true
     reveal_requirements.each do |req|
-      if req['for_item_type']
-        item_count = user.send(req['check']).where(type: req['for_item_type']).sum(:count)
-        if !check_value_by_condition(item_count, req['condition'], req['value'])
+      if req["for_item_type"]
+        item_count = user.send(req["check"]).where(type: req["for_item_type"]).sum(:count)
+        if !check_value_by_condition(item_count, req["condition"], req["value"])
           action_revealed = false
         end
       end
@@ -70,8 +70,8 @@ class PlayerAction
   end
 
   def update_choices(user)
-    action_get_choices_method_name = 'get_' << name << '_choices'
-    if(User.method_defined?(action_get_choices_method_name))
+    action_get_choices_method_name = "get_" << name << "_choices"
+    if User.method_defined?(action_get_choices_method_name)
       choices =  user.send(action_get_choices_method_name)
       self.choices = choices
     end
@@ -79,12 +79,12 @@ class PlayerAction
 
   def check_value_by_condition(check_value, condition, compare_value)
     case condition
-      when 'gt'
-        return check_value > compare_value
-      when 'lt'
-        return check_value < compare_value
-      when 'eq'
-        return check_value == compare_value
+    when "gt"
+        check_value > compare_value
+    when "lt"
+        check_value < compare_value
+    when "eq"
+        check_value == compare_value
     end
   end
 end

@@ -7,7 +7,6 @@ class CreateInventorySlots < ActiveRecord::Migration[8.1]
 
       t.timestamps
     end
-    add_index :inventory_slots, [:slot, :entity_id], unique: true, name: 'unique_inventory_slot_on_slot_and_entity_id'
-
+    add_index :inventory_slots, [ :slot, :entity_id ], unique: true, name: 'unique_inventory_slot_on_slot_and_entity_id'
   end
 end

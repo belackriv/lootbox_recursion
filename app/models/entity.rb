@@ -9,37 +9,37 @@ class Entity < ApplicationRecord
   BASE_INVENTORY_SLOTS = 0
 
   def get_inventory_slot_count
-    if(user)
+    if user
       return user.get_inventory_slot_count
     end
 
-    return Entity::BASE_INVENTORY_SLOTS
+    Entity::BASE_INVENTORY_SLOTS
   end
 
   def ensure_inventory_slots
     for slot_num in 0..(get_inventory_slot_count - 1)
       slot = inventory_slots.find_by(entity: self, slot: slot_num)
-      if(!slot)
+      if !slot
         InventorySlot.create!(entity: self, slot: slot_num, inventory_item: nil)
       end
     end
   end
 
   def remove_inventory(class_name, count)
-    item_count = inventory_slots.joins(:inventory_item).where(inventory_item: { type: class_name}).sum('inventory_item.count')
-    if(item_count < count)
+    item_count = inventory_slots.joins(:inventory_item).where(inventory_item: { type: class_name }).sum("inventory_item.count")
+    if item_count < count
       return []
     end
 
     mutations = []
-    inventory_slots.joins(:inventory_item).where(inventory_item: {type: class_name}).order(slot: :desc).each do |inventory_slot|
-      removed_count = [inventory_slot.inventory_item.count, count].min
+    inventory_slots.joins(:inventory_item).where(inventory_item: { type: class_name }).order(slot: :desc).each do |inventory_slot|
+      removed_count = [ inventory_slot.inventory_item.count, count ].min
       mutation = InventoryItemMutation.new(item_type: class_name, inventory_slot: inventory_slot, delta: (removed_count * -1))
       # can apply instantly since the item_count check was done before
       mutation.apply!
       mutations << mutation
       count = count - removed_count
-      if(count === 0)
+      if count === 0
         break
       end
     end
@@ -58,7 +58,7 @@ class Entity < ApplicationRecord
     # Trigger action state update so disabled states reflect new inventory
     trigger_action_state_update
 
-    return mutations
+    mutations
   end
 
   def add_inventory(class_name, count)
@@ -66,20 +66,20 @@ class Entity < ApplicationRecord
     mutations = []
     inventory_slots.order(slot: :asc).each do |inventory_slot|
       added_count = 0
-      if(inventory_slot.inventory_item === nil)
-        added_count = [stack_size, count].min
+      if inventory_slot.inventory_item === nil
+        added_count = [ stack_size, count ].min
         mutations << InventoryItemMutation.new(item_type: class_name, inventory_slot: inventory_slot, delta: added_count)
-      elsif(inventory_slot.inventory_item.class.name === class_name)
+      elsif inventory_slot.inventory_item.class.name === class_name
         available_count = stack_size - inventory_slot.inventory_item.count
-        added_count = [available_count, count].min
+        added_count = [ available_count, count ].min
         mutations << InventoryItemMutation.new(item_type: class_name, inventory_slot: inventory_slot, delta: added_count)
       end
       count = count - added_count
-      if(count === 0)
+      if count === 0
         break
       end
     end
-    if(count === 0)
+    if count === 0
       mutations.each do |mutation|
         mutation.apply!
       end
@@ -87,7 +87,7 @@ class Entity < ApplicationRecord
       # Trigger action state update so disabled states reflect new inventory
       trigger_action_state_update
     end
-    return mutations
+    mutations
   end
 
   def trigger_action_state_update

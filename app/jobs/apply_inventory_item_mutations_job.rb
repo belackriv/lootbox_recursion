@@ -3,8 +3,8 @@ class ApplyInventoryItemMutationsJob < ApplicationJob
 
   def perform(user, mutations)
     mutations.each do |mutation|
-      if(!mutation.applied)
-        InventoryItem::applyMutation(mutation)
+      if !mutation.applied
+        InventoryItem.applyMutation(mutation)
         mutation.applied = true
         mutation.save
       end

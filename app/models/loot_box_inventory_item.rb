@@ -7,9 +7,9 @@ class LootBoxInventoryItem < InventoryItem
   belongs_to :loot_box, optional: true
 
   # Extend the JSON representation to include the loot_box reference.
-  def to_jbuilder(tags = ['default'])
+  def to_jbuilder(tags = [ "default" ])
     Jbuilder.new do |jbuilder|
-      if tags.include?('default')
+      if tags.include?("default")
         jbuilder.extract!(self, :id, :type, :count, :entity_id)
         jbuilder.loot_box_id loot_box_id
       end

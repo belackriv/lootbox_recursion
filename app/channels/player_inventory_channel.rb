@@ -1,5 +1,4 @@
 class PlayerInventoryChannel < ApplicationCable::Channel
-
   def subscribed
     # Log when a client subscribes to help debug connection / streaming issues.
     # Include the current_user id if available to correlate server logs with client activity.

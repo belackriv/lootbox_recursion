@@ -136,12 +136,33 @@ jobs:
   system-test:
     runs-on: ubuntu-latest
 
-    # services:
+    services:
+      db_test:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: lootbox_recursion_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test_user -d lootbox_recursion_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     #  redis:
     #    image: valkey/valkey:8
     #    ports:
     #      - 6379:6379
     #    options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
+    env:
+      #    DATABASE_URL: postgres://test_user:test_pass@localhost:5432/lootbox_recursion_test
+      RAILS_ENV: test
+      PGHOST: localhost
+      PGPORT: 5432
+      PGUSER: test_user
+      PGPASSWORD: test_pass
+      PGDATABASE: lootbox_recursion_test
     steps:
       - name: Checkout code
         uses: actions/checkout@v5

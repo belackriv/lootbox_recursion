@@ -4,11 +4,11 @@ class ArrayType < ActiveModel::Type::Value
   end
 
   def self.mutable?
-    return true
+    true
   end
 
   def self.assert_valid_value(value)
-    return value.kind_of?(Array)
+    value.kind_of?(Array)
   end
 
   def self.cast(value)

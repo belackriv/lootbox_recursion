@@ -9,6 +9,5 @@ class CreateEntities < ActiveRecord::Migration[8.1]
     User.find_each do |user|
       Entity.create(user: user)
     end
-
   end
 end

@@ -1,5 +1,4 @@
 class InventoryItemMutation < ApplicationRecord
-
   belongs_to :inventory_slot
 
   def apply
@@ -7,7 +6,7 @@ class InventoryItemMutation < ApplicationRecord
   end
 
   def apply!
-    if(self.applied)
+    if self.applied
       return false
     end
     inventory_item = inventory_slot.inventory_item
@@ -24,12 +23,12 @@ class InventoryItemMutation < ApplicationRecord
     end
     self.applied = true
     save!
-    return true
+    true
   end
 
-  def to_jbuilder(tags = ['default'])
+  def to_jbuilder(tags = [ "default" ])
     Jbuilder.new do |jbuilder|
-      if tags.include?('default')
+      if tags.include?("default")
         jbuilder.id id
         jbuilder.itemType item_type
         jbuilder.delta delta

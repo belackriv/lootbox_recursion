@@ -1,5 +1,4 @@
 Rails.application.routes.draw do
-
   # Redirect to localhost from 127.0.0.1 to use same IP address with Vite server
   constraints(host: "127.0.0.0/8") do
     get "(*path)", to: redirect { |params, req| "#{req.protocol}localhost:#{req.port}/#{params[:path]}" }
@@ -20,10 +19,9 @@ Rails.application.routes.draw do
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   # setup action cable
-  mount ActionCable.server => '/cable'
+  mount ActionCable.server => "/cable"
 
   # Defines the root path route ("/")
   # root "posts#index"
   root "index#index"
-
 end

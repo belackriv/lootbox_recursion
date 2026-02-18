@@ -1,7 +1,7 @@
 require "test_helper"
 
 class LootBoxTest < ActiveSupport::TestCase
-  test 'craft creates loot box record and adds LootBoxInventoryItem and consumes materials' do
+  test "craft creates loot box record and adds LootBoxInventoryItem and consumes materials" do
     user = User.create!(email_address: "test1@example.com", password: "password")
     entity = Entity.create!(user: user)
 
@@ -24,8 +24,8 @@ class LootBoxTest < ActiveSupport::TestCase
     slots[1].inventory_item = iron
     slots[1].save!
 
-    assert_equal 50, entity.inventory_items.where(type: 'WoodInventoryItem').sum(:count)
-    assert_equal 50, entity.inventory_items.where(type: 'IronInventoryItem').sum(:count)
+    assert_equal 50, entity.inventory_items.where(type: "WoodInventoryItem").sum(:count)
+    assert_equal 50, entity.inventory_items.where(type: "IronInventoryItem").sum(:count)
 
     # Perform the craft which should consume materials and create a LootBox + inventory item
     result = LootBox.craft(user, {})
@@ -33,22 +33,22 @@ class LootBoxTest < ActiveSupport::TestCase
     assert result[:success], "Expected craft to succeed"
 
     # A LootBox record should have been created and associated with the user's entity
-    assert LootBox.where(user: user).exists?, 'Expected a LootBox record to be created for the user'
+    assert LootBox.where(user: user).exists?, "Expected a LootBox record to be created for the user"
     loot_box = LootBox.where(user: user).order(:created_at).last
     assert_equal entity.id, loot_box.entity_id
 
     # A LootBoxInventoryItem should exist in the entity's inventory referencing the loot_box
-    loot_item = InventoryItem.where(entity: entity, type: 'LootBoxInventoryItem').first
-    assert_not_nil loot_item, 'Expected a LootBoxInventoryItem to be present in the inventory'
+    loot_item = InventoryItem.where(entity: entity, type: "LootBoxInventoryItem").first
+    assert_not_nil loot_item, "Expected a LootBoxInventoryItem to be present in the inventory"
     assert_equal 1, loot_item.count
     assert_equal loot_box.id, loot_item.loot_box_id
 
     # The required materials should have been consumed (counts reduced to 0)
-    assert_equal 0, entity.inventory_items.where(type: 'WoodInventoryItem').sum(:count)
-    assert_equal 0, entity.inventory_items.where(type: 'IronInventoryItem').sum(:count)
+    assert_equal 0, entity.inventory_items.where(type: "WoodInventoryItem").sum(:count)
+    assert_equal 0, entity.inventory_items.where(type: "IronInventoryItem").sum(:count)
   end
 
-  test 'craft rolls back when no inventory slot is available' do
+  test "craft rolls back when no inventory slot is available" do
     user = User.create!(email_address: "test2@example.com", password: "password")
     entity = Entity.create!(user: user)
 
@@ -75,8 +75,8 @@ class LootBoxTest < ActiveSupport::TestCase
     end
 
     # Record current material totals
-    wood_before = entity.inventory_items.where(type: 'WoodInventoryItem').sum(:count)
-    iron_before = entity.inventory_items.where(type: 'IronInventoryItem').sum(:count)
+    wood_before = entity.inventory_items.where(type: "WoodInventoryItem").sum(:count)
+    iron_before = entity.inventory_items.where(type: "IronInventoryItem").sum(:count)
 
     # Attempt to craft; since there is no available slot the transaction should rollback
     result = LootBox.craft(user, {})
@@ -86,27 +86,27 @@ class LootBoxTest < ActiveSupport::TestCase
     puts "inventory items summary: Wood=#{entity.inventory_items.where(type: 'WoodInventoryItem').sum(:count)} Iron=#{entity.inventory_items.where(type: 'IronInventoryItem').sum(:count)} LootBoxItems=#{entity.inventory_items.where(type: 'LootBoxInventoryItem').count}"
 
     assert result.is_a?(Hash)
-    assert_equal false, result[:success], 'Expected craft to fail due to no available slot'
+    assert_equal false, result[:success], "Expected craft to fail due to no available slot"
 
     # Ensure reason is provided and mutations is present (should be empty on rollback)
-    assert_not_nil result[:reason], 'Expected a failure reason when craft fails'
-    assert_kind_of Array, result[:mutations], 'Expected mutations key to be an Array even on failure'
-    assert_empty result[:mutations], 'Expected no applied mutations on rollback'
+    assert_not_nil result[:reason], "Expected a failure reason when craft fails"
+    assert_kind_of Array, result[:mutations], "Expected mutations key to be an Array even on failure"
+    assert_empty result[:mutations], "Expected no applied mutations on rollback"
 
     # Ensure no LootBox was created
-    assert_not LootBox.where(user: user).exists?, 'Expected no LootBox record to be created on failure'
+    assert_not LootBox.where(user: user).exists?, "Expected no LootBox record to be created on failure"
 
     # Ensure materials were not consumed (transaction rolled back)
-    wood_after = entity.inventory_items.where(type: 'WoodInventoryItem').sum(:count)
-    iron_after = entity.inventory_items.where(type: 'IronInventoryItem').sum(:count)
+    wood_after = entity.inventory_items.where(type: "WoodInventoryItem").sum(:count)
+    iron_after = entity.inventory_items.where(type: "IronInventoryItem").sum(:count)
     assert_equal wood_before, wood_after
     assert_equal iron_before, iron_after
 
     # Ensure no LootBoxInventoryItem was created
-    assert_not InventoryItem.where(entity: entity, type: 'LootBoxInventoryItem').exists?
+    assert_not InventoryItem.where(entity: entity, type: "LootBoxInventoryItem").exists?
   end
 
-  test 'craft fails when materials are insufficient' do
+  test "craft fails when materials are insufficient" do
     user = User.create!(email_address: "insufficient@example.com", password: "password")
     entity = Entity.create!(user: user)
 
@@ -126,8 +126,8 @@ class LootBoxTest < ActiveSupport::TestCase
     slots[1].inventory_item = iron
     slots[1].save!
 
-    wood_before = entity.inventory_items.where(type: 'WoodInventoryItem').sum(:count)
-    iron_before = entity.inventory_items.where(type: 'IronInventoryItem').sum(:count)
+    wood_before = entity.inventory_items.where(type: "WoodInventoryItem").sum(:count)
+    iron_before = entity.inventory_items.where(type: "IronInventoryItem").sum(:count)
 
     result = LootBox.craft(user, {})
 
@@ -136,23 +136,23 @@ class LootBoxTest < ActiveSupport::TestCase
     puts "inventory items after attempt: Wood=#{entity.inventory_items.where(type: 'WoodInventoryItem').sum(:count)}, Iron=#{entity.inventory_items.where(type: 'IronInventoryItem').sum(:count)}"
 
     assert result.is_a?(Hash)
-    assert_equal false, result[:success], 'Expected craft to fail due to insufficient materials'
+    assert_equal false, result[:success], "Expected craft to fail due to insufficient materials"
 
     # Ensure reason and mutations keys exist and are consistent with a rollback
-    assert_equal 'insufficient_materials', result[:reason], 'Expected reason to indicate insufficient materials'
+    assert_equal "insufficient_materials", result[:reason], "Expected reason to indicate insufficient materials"
     assert_kind_of Array, result[:mutations]
-    assert_empty result[:mutations], 'Expected no applied mutations on insufficient-materials rollback'
+    assert_empty result[:mutations], "Expected no applied mutations on insufficient-materials rollback"
 
     # Ensure materials were not consumed (transaction rolled back)
-    assert_equal wood_before, entity.inventory_items.where(type: 'WoodInventoryItem').sum(:count)
-    assert_equal iron_before, entity.inventory_items.where(type: 'IronInventoryItem').sum(:count)
+    assert_equal wood_before, entity.inventory_items.where(type: "WoodInventoryItem").sum(:count)
+    assert_equal iron_before, entity.inventory_items.where(type: "IronInventoryItem").sum(:count)
 
     # Ensure no LootBox or LootBoxInventoryItem was created
     assert_not LootBox.where(user: user).exists?
-    assert_not InventoryItem.where(entity: entity, type: 'LootBoxInventoryItem').exists?
+    assert_not InventoryItem.where(entity: entity, type: "LootBoxInventoryItem").exists?
   end
 
-  test 'craft uses next available slot if first slot contains a full LootBoxInventoryItem' do
+  test "craft uses next available slot if first slot contains a full LootBoxInventoryItem" do
     user = User.create!(email_address: "nextslot@example.com", password: "password")
     entity = Entity.create!(user: user)
 
@@ -216,26 +216,26 @@ class LootBoxTest < ActiveSupport::TestCase
       end
     end
 
-    assert result[:success], 'Expected craft to succeed when another slot is available'
+    assert result[:success], "Expected craft to succeed when another slot is available"
 
     # The LootBoxInventoryItem may be placed into any available slot except the first_slot
     # (which we intentionally pre-filled). Search for a LootBoxInventoryItem in any other slot.
     lootbox_slot = nil
     entity.inventory_slots.order(slot: :asc).each do |s|
-      if s.inventory_item && s.inventory_item.type == 'LootBoxInventoryItem' && s.slot != first_slot.slot
+      if s.inventory_item && s.inventory_item.type == "LootBoxInventoryItem" && s.slot != first_slot.slot
         lootbox_slot = s
         break
       end
     end
 
-    assert_not_nil lootbox_slot, 'Expected a LootBoxInventoryItem to be placed in some slot other than the first slot'
+    assert_not_nil lootbox_slot, "Expected a LootBoxInventoryItem to be placed in some slot other than the first slot"
 
     # Verify the materials were consumed as part of a successful craft
-    assert_equal 0, entity.inventory_items.where(type: 'WoodInventoryItem').sum(:count)
-    assert_equal 0, entity.inventory_items.where(type: 'IronInventoryItem').sum(:count)
+    assert_equal 0, entity.inventory_items.where(type: "WoodInventoryItem").sum(:count)
+    assert_equal 0, entity.inventory_items.where(type: "IronInventoryItem").sum(:count)
   end
 
-  test 'craft action becomes disabled after crafting when materials are insufficient' do
+  test "craft action becomes disabled after crafting when materials are insufficient" do
     user = User.create!(email_address: "action_state@example.com", password: "password")
     entity = Entity.create!(user: user)
     entity.ensure_inventory_slots
@@ -257,7 +257,7 @@ class LootBoxTest < ActiveSupport::TestCase
 
     # Verify craft action is enabled before crafting
     user.update_player_actions
-    craft_action_before = user.get_available_actions.find { |a| a.name == 'craft' }
+    craft_action_before = user.get_available_actions.find { |a| a.name == "craft" }
     assert_not craft_action_before.disabled, "Craft action should be enabled when materials are sufficient (> 50)"
 
     # Perform the craft (consumes 50, leaving 1)
@@ -267,13 +267,13 @@ class LootBoxTest < ActiveSupport::TestCase
     # After crafting, reload user's action states to reflect the inventory change
     # In production, this happens via PlayerActionsChannel broadcast, but in tests we call it directly
     user.update_player_actions
-    craft_action_after = user.get_available_actions.find { |a| a.name == 'craft' }
+    craft_action_after = user.get_available_actions.find { |a| a.name == "craft" }
 
     # Verify craft action is now disabled (need > 50, but only have 1 left)
     assert craft_action_after.disabled, "Craft action should be disabled when materials drop to 1 (needs > 50)"
   end
 
-  test 'scavenge triggers action state update via trigger_action_state_update' do
+  test "scavenge triggers action state update via trigger_action_state_update" do
     user = User.create!(email_address: "scavenge_state@example.com", password: "password")
     entity = Entity.create!(user: user)
     entity.ensure_inventory_slots
@@ -286,17 +286,17 @@ class LootBoxTest < ActiveSupport::TestCase
 
     # Verify initial state
     user.update_player_actions
-    craft_action_initial = user.get_available_actions.find { |a| a.name == 'craft' }
+    craft_action_initial = user.get_available_actions.find { |a| a.name == "craft" }
     assert craft_action_initial.disabled, "Craft should be disabled initially (no materials)"
 
     # Add inventory via add_inventory, which should trigger action state update
     # Need > 50 for each, so add 51 of each
-    entity.add_inventory('WoodInventoryItem', 51)
-    entity.add_inventory('IronInventoryItem', 51)
+    entity.add_inventory("WoodInventoryItem", 51)
+    entity.add_inventory("IronInventoryItem", 51)
 
     # Reload and check action state was updated
     user.update_player_actions
-    craft_action_after = user.get_available_actions.find { |a| a.name == 'craft' }
+    craft_action_after = user.get_available_actions.find { |a| a.name == "craft" }
     assert_not craft_action_after.disabled, "Craft should be enabled after adding > 50 of each material"
   end
 end

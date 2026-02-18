@@ -25,7 +25,7 @@ module LootboxRecursion
     # config.eager_load_paths << Rails.root.join("extras")
     #
     if config.respond_to?(:web_console)
-      config.web_console.whitelisted_ips = '172.0.0.0/8'
+      config.web_console.whitelisted_ips = "172.0.0.0/8"
     end
   end
 end
