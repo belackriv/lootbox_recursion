@@ -5,7 +5,7 @@ import {
   PlayerActionData,
   //  InventoryItem,
   InventoryMutation,
-  //  InventorySlot,
+  InventorySlot,
   InventoryGridSlot,
 } from "../types/index.ts";
 import PlayerActionsChannel from "@/channels/playerActions.ts";
@@ -147,6 +147,41 @@ export const usePlayerStore = defineStore("player", () => {
     }
   };
 
+  const snapshotInventory = (slots: Array<InventorySlot>) => {
+    for (const serverSlot of slots) {
+      // Support both camelCase and snake_case keys from server
+      const slotNumber = (serverSlot as any).slot;
+      if (slotNumber === undefined || slotNumber === null) continue;
+
+      const rowIndex = Math.floor(slotNumber / inventoryRowLength);
+      const columnIndex = slotNumber % inventoryRowLength;
+
+      if (
+        !inventory.value.rows[rowIndex] ||
+        !inventory.value.rows[rowIndex][columnIndex]
+      ) {
+        continue;
+      }
+
+      const gridSlot = inventory.value.rows[rowIndex][columnIndex];
+      const serverItem =
+        (serverSlot as any).inventoryItem ??
+        (serverSlot as any).inventory_item ??
+        null;
+
+      if (serverItem && serverItem.type && serverItem.count > 0) {
+        gridSlot.slot.inventoryItem = {
+          type: serverItem.type,
+          count: serverItem.count,
+        };
+      } else {
+        gridSlot.slot.inventoryItem = null;
+      }
+
+      gridSlot.slot.slot = slotNumber;
+    }
+  };
+
   const performPlayerAction = (
     action: PlayerAction,
     data: PlayerActionData | null | undefined,
@@ -163,6 +198,7 @@ export const usePlayerStore = defineStore("player", () => {
     updateAvailableActions,
     updateInventory,
     mutateInventory,
+    snapshotInventory,
     performPlayerAction,
   };
 });

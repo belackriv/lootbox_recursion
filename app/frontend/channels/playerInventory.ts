@@ -2,6 +2,7 @@ import type {
   PlayerAction,
   PlayerActionData,
   InventoryMutation,
+  InventoryChannelEnvelope,
 } from "@/types";
 import type { Consumer, Subscription } from "@rails/actioncable";
 import { usePlayerStore } from "@/store/player.ts";
@@ -32,12 +33,24 @@ class PlayerInventoryChannel {
     );
   }
 
-  receive(mutations: Array<InventoryMutation>) {
+  receive(envelope: InventoryChannelEnvelope) {
     try {
       const store = usePlayerStore();
-      store.mutateInventory(mutations);
+      switch (envelope.action) {
+        case "inventory_mutations":
+          store.mutateInventory(envelope.data);
+          break;
+        case "inventory_snapshot":
+          store.snapshotInventory(envelope.data);
+          break;
+        default:
+          console.warn(
+            "[PlayerInventoryChannel] unknown action:",
+            (envelope as any).action
+          );
+      }
     } catch (err) {
-      // silently handle mutation application errors
+      // silently handle envelope processing errors
     }
   }
 

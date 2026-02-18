@@ -74,3 +74,7 @@ export type InventoryMutation = {
   delta: number;
   applied: boolean;
 };
+
+export type InventoryChannelEnvelope =
+  | { action: "inventory_mutations"; data: Array<InventoryMutation> }
+  | { action: "inventory_snapshot"; data: Array<InventorySlot> };
