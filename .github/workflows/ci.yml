@@ -3,7 +3,7 @@ name: CI
 on:
   pull_request:
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   scan_ruby:
@@ -18,12 +18,18 @@ jobs:
         with:
           bundler-cache: true
 
+      - name: Ensure brakeman is executable
+        run: chmod +x bin/brakeman
+
       - name: Scan for common Rails security vulnerabilities using static analysis
         run: bin/brakeman --no-pager
-      
+
+      - name: Ensure brakeman is executable
+        run: chmod +x bin/bundler-audit
+
       - name: Scan for known security vulnerabilities in gems used
         run: bin/bundler-audit
-      
+
   scan_js:
     runs-on: ubuntu-latest
 
@@ -35,6 +41,9 @@ jobs:
         uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
+
+      - name: Ensure importmao is executable
+        run: chmod +x bin/importmap
 
       - name: Scan for security vulnerabilities in JavaScript dependencies
         run: bin/importmap audit
@@ -62,26 +71,55 @@ jobs:
           restore-keys: |
             rubocop-${{ runner.os }}-${{ env.DEPENDENCIES_HASH }}-
 
+      - name: Ensure rubocop is executable
+        run: chmod +x bin/rubocop
+
       - name: Lint code for consistent style
         run: bin/rubocop -f github
 
   test:
     runs-on: ubuntu-latest
 
-    # services:
+    services:
+      db_test:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_pass
+          POSTGRES_DB: lootbox_recursion_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U test_user -d lootbox_recursion_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
     #  redis:
     #    image: valkey/valkey:8
     #    ports:
     #      - 6379:6379
     #    options: --health-cmd "redis-cli ping" --health-interval 10s --health-timeout 5s --health-retries 5
+    #  env:
+    #    DATABASE_URL: postgres://test_user:test_pass@localhost:5432/lootbox_recursion_test
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
+
+      - name: Wait for Postgres
+        run: |
+          for i in {1..20}; do
+            pg_isready -h localhost -p 5432 -U test_user -d lootbox_recursion_test && break
+            sleep 2
+          done
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
+
+      - name: Ensure rails is executable
+        run: chmod +x bin/rails
 
       - name: Run tests
         env:
