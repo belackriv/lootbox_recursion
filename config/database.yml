@@ -23,7 +23,7 @@ test:
   database: lootbox_recursion_test
   username: test_user
   password: test_pass
-  host: db_test
+  host: <%= ENV.fetch("PGHOST", "db_test") %>
 
 production:
   primary: &prod_main
@@ -36,7 +36,6 @@ production:
     <<: *prod_main
   cable:
     <<: *prod_main
-
 # Store production database in the storage/ directory, which by default
 # is mounted as a persistent Docker volume in config/deploy.yml.
 #
