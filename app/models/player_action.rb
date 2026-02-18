@@ -44,6 +44,13 @@ class PlayerAction
   end
 
   def update_disabled(user)
+    if name == "sort_inventory"
+      on_cooldown = on_cooldown_until && on_cooldown_until > Time.current
+      sort_needed = user.entity.present? && user.entity.inventory_sort_needed?
+      self.disabled = on_cooldown || !sort_needed
+      return
+    end
+
     action_disabled = false
     requirements.each do |req|
       if req["for_item_type"]

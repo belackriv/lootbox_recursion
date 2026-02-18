@@ -43,3 +43,14 @@ player_actions:
         condition: "gt"
         value: 1
     reveal_requirements: []
+
+  - name: "sort_inventory"
+    label: "Sort"
+    disabled: true
+    revealed: true
+    cooldown: 1
+    on_cooldown_until: null
+    cast_time: 0
+    choices: []
+    requirements: []
+    reveal_requirements: []

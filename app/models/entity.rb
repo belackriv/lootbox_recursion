@@ -90,34 +90,29 @@ class Entity < ApplicationRecord
     mutations
   end
 
-  def sort_and_compress_inventory!
+  def inventory_sort_needed?
     ensure_inventory_slots
 
     slots = inventory_slots.includes(:inventory_item).order(slot: :asc)
-    totals_by_type = Hash.new(0)
 
+    current_sequence = []
     slots.each do |inventory_slot|
       next if inventory_slot.inventory_item.nil?
       next if inventory_slot.inventory_item.count.to_i <= 0
 
-      totals_by_type[inventory_slot.inventory_item.type] += inventory_slot.inventory_item.count.to_i
+      current_sequence << { type: inventory_slot.inventory_item.type, count: inventory_slot.inventory_item.count.to_i }
     end
 
-    sorted_types = totals_by_type.keys.sort_by do |type|
-      [ Object.const_get(type).display_name.downcase, type ]
-    end
+    expected_sequence = build_sorted_stacks(slots)
 
-    rebuilt_stacks = []
-    sorted_types.each do |type|
-      total_count = totals_by_type[type]
-      stack_size = Object.const_get(type)::STACK_SIZE
+    current_sequence != expected_sequence
+  end
 
-      while total_count > 0
-        stack_count = [ stack_size, total_count ].min
-        rebuilt_stacks << { type: type, count: stack_count }
-        total_count -= stack_count
-      end
-    end
+  def sort_and_compress_inventory!
+    ensure_inventory_slots
+
+    slots = inventory_slots.includes(:inventory_item).order(slot: :asc)
+    rebuilt_stacks = build_sorted_stacks(slots)
 
     ApplicationRecord.transaction do
       slots.each_with_index do |inventory_slot, index|
@@ -150,9 +145,40 @@ class Entity < ApplicationRecord
     trigger_action_state_update
 
     {
-      item_types: sorted_types.length,
+      item_types: rebuilt_stacks.map { |s| s[:type] }.uniq.length,
       slots_used: rebuilt_stacks.length
     }
+  end
+
+  private
+
+  def build_sorted_stacks(slots)
+    totals_by_type = Hash.new(0)
+
+    slots.each do |inventory_slot|
+      next if inventory_slot.inventory_item.nil?
+      next if inventory_slot.inventory_item.count.to_i <= 0
+
+      totals_by_type[inventory_slot.inventory_item.type] += inventory_slot.inventory_item.count.to_i
+    end
+
+    sorted_types = totals_by_type.keys.sort_by do |type|
+      [ Object.const_get(type).display_name.downcase, type ]
+    end
+
+    stacks = []
+    sorted_types.each do |type|
+      total_count = totals_by_type[type]
+      stack_size = Object.const_get(type)::STACK_SIZE
+
+      while total_count > 0
+        stack_count = [ stack_size, total_count ].min
+        stacks << { type: type, count: stack_count }
+        total_count -= stack_count
+      end
+    end
+
+    stacks
   end
 
   def trigger_action_state_update

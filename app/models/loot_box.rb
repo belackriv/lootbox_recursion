@@ -91,7 +91,7 @@ class LootBox < ApplicationRecord
       # Broadcast the mutations we have (on failure these will typically be empty because of rollback)
       # Serialize mutations to camelCase using to_jbuilder before broadcasting
       mutations_payload = mutations.map { |mutation| mutation.to_jbuilder.attributes! }
-      PlayerInventoryChannel.broadcast_to(user, mutations_payload)
+      PlayerInventoryChannel.broadcast_to(user, { action: "inventory_mutations", data: mutations_payload })
 
       # Trigger action state update so disabled state reflects new inventory
       # This ensures the craft button (and other actions) update based on final inventory state

@@ -1,6 +1,45 @@
 require "test_helper"
 
 class LootBoxTest < ActiveSupport::TestCase
+  include ActionCable::TestHelper
+
+  test "craft broadcasts inventory channel payload with envelope format" do
+    user = User.create!(email_address: "envelope_test@example.com", password: "password")
+    entity = Entity.create!(user: user)
+    entity.ensure_inventory_slots
+
+    # Clear all slots for deterministic state
+    entity.inventory_slots.order(slot: :asc).each do |s|
+      s.inventory_item = nil
+      s.save!
+    end
+
+    # Add required materials
+    wood = WoodInventoryItem.create!(entity: entity, count: 50)
+    iron = IronInventoryItem.create!(entity: entity, count: 50)
+    slots = entity.inventory_slots.order(slot: :asc).to_a
+    slots[0].inventory_item = wood
+    slots[0].save!
+    slots[1].inventory_item = iron
+    slots[1].save!
+
+    # Capture broadcasts to PlayerInventoryChannel
+    inventory_broadcasts = capture_broadcasts(PlayerInventoryChannel.broadcasting_for(user)) do
+      LootBox.craft(user, {})
+    end
+
+    # There should be at least one broadcast with the envelope format
+    assert_not_empty inventory_broadcasts, "Expected at least one broadcast to PlayerInventoryChannel"
+
+    # Find the craft broadcast (the last one should be the ensure-block broadcast)
+    envelope = inventory_broadcasts.last
+
+    assert envelope.key?("action"), "Broadcast payload should include 'action' key"
+    assert envelope.key?("data"), "Broadcast payload should include 'data' key"
+    assert_equal "inventory_mutations", envelope["action"], "Broadcast action should be 'inventory_mutations'"
+    assert_kind_of Array, envelope["data"], "Broadcast data should be an Array"
+  end
+
   test "craft creates loot box record and adds LootBoxInventoryItem and consumes materials" do
     user = User.create!(email_address: "test1@example.com", password: "password")
     entity = Entity.create!(user: user)

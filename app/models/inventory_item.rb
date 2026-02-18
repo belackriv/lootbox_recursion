@@ -36,6 +36,6 @@ class InventoryItem < ApplicationRecord
     mutations = user.add_inventory(item_type, item_count)
     # Serialize mutations to camelCase using to_jbuilder before broadcasting
     mutations_payload = mutations.map { |mutation| mutation.to_jbuilder.attributes! }
-    PlayerInventoryChannel.broadcast_to(user, mutations_payload)
+    PlayerInventoryChannel.broadcast_to(user, { action: "inventory_mutations", data: mutations_payload })
   end
 end

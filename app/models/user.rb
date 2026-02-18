@@ -98,6 +98,12 @@ class User < ApplicationRecord
     craft_choices
   end
 
+  def sort_inventory(action_data)
+    entity.sort_and_compress_inventory!
+    inventory_payload = entity.inventory_slots.order(:slot).limit(100).map { |slot| slot.to_jbuilder.attributes! }
+    PlayerInventoryChannel.broadcast_to(self, { action: "inventory_snapshot", data: inventory_payload })
+  end
+
   def craft(action_data)
      Object.const_get(action_data["class_name"]).craft(self, action_data)
   end
