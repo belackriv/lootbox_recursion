@@ -1,5 +1,5 @@
 /// <reference types="vitest" />
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
 import { nextTick } from "vue";
@@ -278,6 +278,124 @@ describe("ActionButton - use action disabled state", () => {
 
     // scavenge button should still be enabled — slot selection is irrelevant to it
     expect(isButtonDisabled(wrapper)).toBe(false);
+  });
+
+  // ---------------------------------------------------------------------------
+  // ActionButton - cooldown behavior with castTime=0 (Sort button regression)
+  // ---------------------------------------------------------------------------
+
+  describe("ActionButton - cooldown with castTime=0 (Sort button)", () => {
+    let pinia: ReturnType<typeof createPinia>;
+
+    const SORT_ACTION: PlayerAction = {
+      name: "sort_inventory",
+      label: "Sort",
+      disabled: false,
+      revealed: true,
+      cooldown: 1,
+      castTime: 0,
+      choices: [],
+      requirements: [],
+      revealRequirements: [],
+    };
+
+    beforeEach(() => {
+      pinia = createPinia();
+      setActivePinia(pinia);
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    function mountSortButton(mockSend = vi.fn()) {
+      return mount(ActionButton, {
+        global: {
+          plugins: [pinia],
+          provide: { playerActionsChannel: { send: mockSend } },
+        },
+        props: SORT_ACTION,
+      });
+    }
+
+    it("shows cooldown overlay immediately after clicking Sort", async () => {
+      const wrapper = mountSortButton();
+
+      await wrapper.find("button").trigger("click");
+      await nextTick();
+
+      expect(wrapper.find(".border-red-900").element.style.display).toBe(
+        "block"
+      );
+    });
+
+    it("keeps cooldown overlay visible while still within the cooldown window", async () => {
+      const wrapper = mountSortButton();
+
+      await wrapper.find("button").trigger("click");
+
+      vi.advanceTimersByTime(500);
+      await nextTick();
+
+      expect(wrapper.find(".border-red-900").element.style.display).toBe(
+        "block"
+      );
+    });
+
+    it("removes cooldown overlay after the cooldown duration has elapsed", async () => {
+      const wrapper = mountSortButton();
+
+      await wrapper.find("button").trigger("click");
+
+      vi.advanceTimersByTime(1001);
+      await nextTick();
+
+      expect(wrapper.find(".border-red-900").element.style.display).toBe(
+        "none"
+      );
+    });
+
+    it("does not get stuck permanently on cooldown when castTime is 0", async () => {
+      const wrapper = mountSortButton();
+
+      await wrapper.find("button").trigger("click");
+
+      vi.advanceTimersByTime(1001);
+      await nextTick();
+
+      expect(wrapper.find(".border-red-900").element.style.display).toBe(
+        "none"
+      );
+    });
+
+    it("cannot be clicked again while on cooldown", async () => {
+      const mockSend = vi.fn();
+      const wrapper = mountSortButton(mockSend);
+
+      await wrapper.find("button").trigger("click");
+      mockSend.mockClear();
+
+      // Second click during cooldown should be ignored
+      await wrapper.find("button").trigger("click");
+
+      expect(mockSend).not.toHaveBeenCalled();
+    });
+
+    it("can be clicked again after the cooldown has expired", async () => {
+      const mockSend = vi.fn();
+      const wrapper = mountSortButton(mockSend);
+
+      await wrapper.find("button").trigger("click");
+      mockSend.mockClear();
+
+      vi.advanceTimersByTime(1001);
+      await nextTick();
+
+      await wrapper.find("button").trigger("click");
+
+      expect(mockSend).toHaveBeenCalledOnce();
+    });
   });
 
   // ─── Button label ─────────────────────────────────────────────────────────

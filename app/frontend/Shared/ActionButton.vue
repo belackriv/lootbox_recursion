@@ -26,23 +26,26 @@ const performAction = (actionData: PlayerActionData | null) => {
   store.performPlayerAction({ ...props }, actionData, playerActionsChannel);
 
   onCooldown.value = true;
+  setTimeout(() => {
+    onCooldown.value = false;
+  }, props.cooldown * 1000);
 
-  const clickedAt = performance.now();
-  const onCooldownUntil = clickedAt + props.cooldown * 1000;
-  function animationLoop() {
-    const currentTime = performance.now();
+  if (props.castTime > 0) {
+    const clickedAt = performance.now();
+    function animationLoop() {
+      const currentTime = performance.now();
 
-    onCooldown.value = currentTime <= onCooldownUntil;
-    castTimeProgress.value =
-      ((currentTime - clickedAt) / (props.castTime * 1000)) * 100;
+      castTimeProgress.value =
+        ((currentTime - clickedAt) / (props.castTime * 1000)) * 100;
 
-    if (castTimeProgress.value <= 100) {
-      requestAnimationFrame(animationLoop);
-    } else {
-      castTimeProgress.value = 0;
+      if (castTimeProgress.value <= 100) {
+        requestAnimationFrame(animationLoop);
+      } else {
+        castTimeProgress.value = 0;
+      }
     }
+    requestAnimationFrame(animationLoop);
   }
-  requestAnimationFrame(animationLoop);
 };
 
 const onClick = () => {
