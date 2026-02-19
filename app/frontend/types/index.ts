@@ -1,3 +1,5 @@
+export const LOOTBOX_ITEM_TYPE = "LootBoxInventoryItem";
+
 export type Flash = {
   notice?: string;
   alert?: string;

@@ -1,4 +1,4 @@
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { defineStore } from "pinia";
 import {
   PlayerAction,
@@ -34,6 +34,22 @@ const defaultActions: Array<PlayerAction> = [];
 export const usePlayerStore = defineStore("player", () => {
   const inventory = ref({ rows: inventoryRows });
   const availableActions = ref(defaultActions);
+  const selectedSlotIndex = ref<number | null>(null);
+
+  const selectSlot = (slotNumber: number) => {
+    selectedSlotIndex.value =
+      selectedSlotIndex.value === slotNumber ? null : slotNumber;
+  };
+
+  const selectedSlotItem = computed(() => {
+    if (selectedSlotIndex.value === null) return null;
+    const slotNumber = selectedSlotIndex.value;
+    const rowIndex = Math.floor(slotNumber / inventoryRowLength);
+    const columnIndex = slotNumber % inventoryRowLength;
+    return (
+      inventory.value.rows[rowIndex]?.[columnIndex]?.slot?.inventoryItem ?? null
+    );
+  });
 
   const updateAvailableActions = (
     updatedAvailableActions: Array<PlayerAction>
@@ -195,6 +211,9 @@ export const usePlayerStore = defineStore("player", () => {
   return {
     inventory,
     availableActions,
+    selectedSlotIndex,
+    selectSlot,
+    selectedSlotItem,
     updateAvailableActions,
     updateInventory,
     mutateInventory,

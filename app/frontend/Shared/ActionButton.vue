@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { PlayerAction, PlayerActionData } from "@/types/index.ts";
-import { inject, ref } from "vue";
+import { LOOTBOX_ITEM_TYPE } from "@/types/index.ts";
+import { inject, ref, computed } from "vue";
 import { usePlayerStore } from "@/store/player.ts";
 import PlayerActionsChannel from "@/channels/playerActions.ts";
 
@@ -12,8 +13,16 @@ const playerActionsChannel = inject<PlayerActionsChannel>(
 const castTimeProgress = ref<number>(0);
 const onCooldown = ref<boolean>(false);
 
+const store = usePlayerStore();
+
+const isDisabled = computed(() => {
+  if (props.name === "use") {
+    return store.selectedSlotItem?.type !== LOOTBOX_ITEM_TYPE;
+  }
+  return props.disabled;
+});
+
 const performAction = (actionData: PlayerActionData | null) => {
-  const store = usePlayerStore();
   store.performPlayerAction({ ...props }, actionData, playerActionsChannel);
 
   onCooldown.value = true;
@@ -37,8 +46,7 @@ const performAction = (actionData: PlayerActionData | null) => {
 };
 
 const onClick = () => {
-  if (props.name === "use") {
-    //todo: implement use (should it have cooldown?)
+  if (isDisabled.value) {
     return false;
   }
   if (onCooldown.value || castTimeProgress.value > 0) {
@@ -50,7 +58,7 @@ const onClick = () => {
 
 <template>
   <button
-    :disabled="disabled"
+    :disabled="isDisabled"
     @click="onClick"
     class="bg-gray-400 hover:bg-gray-500 disabled:bg-gray-700 disabled:opacity-60 border-gray-300 border-2 rounded-lg underline p-1 pl-2 pr-2 m-1 disabled:cursor-not-allowed cursor-pointer relative"
   >

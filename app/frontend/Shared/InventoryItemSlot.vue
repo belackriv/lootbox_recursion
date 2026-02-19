@@ -1,9 +1,15 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import type { InventoryGridSlot } from "@/types/index.ts";
+import { usePlayerStore } from "@/store/player.ts";
 
 const updated = ref(false);
 const props = defineProps<{ gridSlot: InventoryGridSlot }>();
+const store = usePlayerStore();
+
+const isSelected = computed(
+  () => store.selectedSlotIndex === props.gridSlot.slot.slot
+);
 
 watch(props.gridSlot, () => {
   updated.value = true;
@@ -15,7 +21,13 @@ watch(props.gridSlot, () => {
 
 <template>
   <div
-    class="w-16 h-16 flex-none border-2 border-slate-500 transition-border-color duration-500 hover:border-slate-300 relative"
+    class="w-16 h-16 flex-none border-2 transition-colors duration-150 relative cursor-pointer"
+    :class="
+      isSelected
+        ? 'border-yellow-400'
+        : 'border-slate-500 hover:border-slate-300'
+    "
+    @click="store.selectSlot(props.gridSlot.slot.slot)"
   >
     <div>
       {{
