@@ -338,4 +338,209 @@ class LootBoxTest < ActiveSupport::TestCase
     craft_action_after = user.get_available_actions.find { |a| a.name == "craft" }
     assert_not craft_action_after.disabled, "Craft should be enabled after adding > 50 of each material"
   end
+
+  # ---------------------------------------------------------------------------
+  # LootBox#open! tests
+  # ---------------------------------------------------------------------------
+
+  # Shared helper: create a user + entity with inventory slots, craft a loot box,
+  # and return [user, entity, loot_box].
+  def create_user_with_crafted_loot_box(email:)
+    user   = User.create!(email_address: email, password: "password")
+    entity = Entity.create!(user: user)
+    entity.ensure_inventory_slots
+
+    entity.inventory_slots.order(slot: :asc).each { |s| s.update!(inventory_item: nil) }
+
+    wood = WoodInventoryItem.create!(entity: entity, count: 50)
+    iron = IronInventoryItem.create!(entity: entity, count: 50)
+    slots = entity.inventory_slots.order(slot: :asc).to_a
+    slots[0].update!(inventory_item: wood)
+    slots[1].update!(inventory_item: iron)
+
+    result = LootBox.craft(user, {})
+    assert result[:success], "Precondition: craft must succeed (got: #{result.inspect})"
+
+    loot_box = LootBox.where(user: user).order(:created_at).last
+    [ user, entity, loot_box ]
+  end
+
+  test "open! returns success with mutations and loot arrays" do
+    user, entity, loot_box = create_user_with_crafted_loot_box(email: "open_success@example.com")
+
+    result = loot_box.open!
+
+    assert result.is_a?(Hash)
+    assert_equal true,  result[:success],   "Expected open! to succeed"
+    assert_nil          result[:reason],    "Expected no failure reason on success"
+    assert_kind_of Array, result[:mutations]
+    assert_kind_of Array, result[:loot]
+    assert_not_empty result[:mutations], "Expected at least one inventory mutation"
+    assert_not_empty result[:loot],      "Expected at least one LootBoxLoot record"
+  end
+
+  test "open! sets opened_at on the loot box" do
+    user, entity, loot_box = create_user_with_crafted_loot_box(email: "open_opened_at@example.com")
+
+    assert_nil loot_box.opened_at, "Precondition: loot box must not be opened yet"
+    loot_box.open!
+    loot_box.reload
+
+    assert_not_nil loot_box.opened_at, "Expected opened_at to be set after open!"
+  end
+
+  test "open! removes the LootBoxInventoryItem from inventory" do
+    user, entity, loot_box = create_user_with_crafted_loot_box(email: "open_removes_box@example.com")
+
+    assert InventoryItem.where(entity: entity, type: "LootBoxInventoryItem").exists?,
+           "Precondition: LootBoxInventoryItem must exist before opening"
+
+    loot_box.open!
+
+    assert_not InventoryItem.where(entity: entity, type: "LootBoxInventoryItem").exists?,
+               "Expected LootBoxInventoryItem to be removed after open!"
+  end
+
+  test "open! adds rolled items to inventory" do
+    user, entity, loot_box = create_user_with_crafted_loot_box(email: "open_adds_items@example.com")
+
+    wood_before = entity.inventory_items.where(type: "WoodInventoryItem").sum(:count)
+    iron_before = entity.inventory_items.where(type: "IronInventoryItem").sum(:count)
+
+    result = loot_box.open!
+    assert result[:success], "Expected open! to succeed"
+
+    entity.reload
+    wood_after = entity.inventory_items.where(type: "WoodInventoryItem").sum(:count)
+    iron_after = entity.inventory_items.where(type: "IronInventoryItem").sum(:count)
+
+    # At least one material type must have increased (loot table always grants at least some)
+    assert (wood_after > wood_before) || (iron_after > iron_before),
+           "Expected at least one material to increase after opening. " \
+           "Wood: #{wood_before}->#{wood_after}, Iron: #{iron_before}->#{iron_after}"
+  end
+
+  test "open! creates LootBoxLoot records linked to this loot box" do
+    user, entity, loot_box = create_user_with_crafted_loot_box(email: "open_loot_records@example.com")
+
+    loot_box.open!
+
+    loot_records = LootBoxLoot.where(loot_box: loot_box)
+    assert_not_empty loot_records, "Expected LootBoxLoot records to be created"
+    loot_records.each do |record|
+      assert_equal loot_box.id, record.loot_box_id
+      assert_not_nil record.inventory_item_id
+      assert_equal true, record.claimed
+      assert record.count.to_i > 0, "Expected loot count > 0"
+    end
+  end
+
+  test "open! broadcasts to PlayerInventoryChannel" do
+    user, entity, loot_box = create_user_with_crafted_loot_box(email: "open_broadcast@example.com")
+
+    broadcasts = capture_broadcasts(PlayerInventoryChannel.broadcasting_for(user)) do
+      loot_box.open!
+    end
+
+    assert_not_empty broadcasts, "Expected at least one broadcast to PlayerInventoryChannel"
+
+    # The final ensure-block broadcast carries the mutation payload
+    envelope = broadcasts.last
+    assert envelope.key?("action"), "Broadcast payload must include 'action' key"
+    assert_equal "inventory_mutations", envelope["action"]
+    assert_kind_of Array, envelope["data"]
+  end
+
+  test "open! returns already_opened when loot box was previously opened" do
+    user, entity, loot_box = create_user_with_crafted_loot_box(email: "open_already_opened@example.com")
+
+    # First open succeeds
+    first = loot_box.open!
+    assert first[:success], "Expected first open! to succeed"
+
+    # Second open must be rejected
+    second = loot_box.open!
+    assert_equal false,            second[:success]
+    assert_equal "already_opened", second[:reason]
+    assert_empty                   second[:mutations]
+  end
+
+  test "open! returns no_inventory_item when LootBoxInventoryItem is missing" do
+    user   = User.create!(email_address: "open_no_item@example.com", password: "password")
+    entity = Entity.create!(user: user)
+    entity.ensure_inventory_slots
+
+    # Create a loot box without a corresponding LootBoxInventoryItem in inventory
+    loot_box = LootBox.create!(user: user, entity: entity)
+
+    result = loot_box.open!
+    assert_equal false,             result[:success]
+    assert_equal "no_inventory_item", result[:reason]
+  end
+
+  test "open! does not set opened_at when it fails" do
+    user, entity, loot_box = create_user_with_crafted_loot_box(email: "open_no_opened_at@example.com")
+
+    # Force failure by pre-marking as opened
+    loot_box.update_columns(opened_at: 1.hour.ago)
+
+    result = loot_box.open!
+    assert_equal false,            result[:success]
+    assert_equal "already_opened", result[:reason]
+
+    # opened_at should still be the original value, not updated to now
+    loot_box.reload
+    assert loot_box.opened_at < Time.current - 30.minutes,
+           "Expected opened_at to remain the original pre-set value"
+  end
+
+  test "open! is idempotent — second call does not create additional loot records" do
+    user, entity, loot_box = create_user_with_crafted_loot_box(email: "open_idempotent@example.com")
+
+    loot_box.open!
+    loot_count_after_first = LootBoxLoot.where(loot_box: loot_box).count
+
+    loot_box.open!
+    loot_count_after_second = LootBoxLoot.where(loot_box: loot_box).count
+
+    assert_equal loot_count_after_first, loot_count_after_second,
+                 "Expected no additional LootBoxLoot records on second (rejected) open attempt"
+  end
+
+  test "open! base LootBoxModifier no-op apply does not change config" do
+    user   = User.create!(email_address: "modifier_noop@example.com", password: "password")
+    entity = Entity.create!(user: user)
+
+    loot_box = LootBox.create!(user: user, entity: entity)
+
+    modifier = LootBoxModifier.new(loot_box: loot_box)
+    original_config = { rolls: { min: 2, max: 4 }, entries: [] }
+
+    result = modifier.apply(original_config)
+    assert_equal original_config, result, "Expected base LootBoxModifier#apply to return config unchanged"
+  end
+
+  test "open! applies loot_box_modifiers to the loot table config" do
+    user, entity, loot_box = create_user_with_crafted_loot_box(email: "open_modifier_apply@example.com")
+
+    # Build a modifier subclass inline that forces exactly 1 roll
+    one_roll_modifier_class = Class.new(LootBoxModifier) do
+      def apply(config)
+        config.merge(rolls: { min: 1, max: 1 })
+      end
+    end
+
+    # Stub loot_box_modifiers to return an instance of our inline modifier
+    stub_modifier = one_roll_modifier_class.new
+    stub_modifier.define_singleton_method(:loot_box) { loot_box }
+    loot_box.define_singleton_method(:loot_box_modifiers) do
+      [ stub_modifier ]
+    end
+
+    result = loot_box.open!
+
+    assert result[:success], "Expected open! to succeed with modifier applied"
+    # With exactly 1 roll, there should be at least 1 loot record
+    assert_not_empty result[:loot], "Expected at least one loot record even with 1 forced roll"
+  end
 end

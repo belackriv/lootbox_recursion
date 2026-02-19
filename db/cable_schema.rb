@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_08_144844) do
+ActiveRecord::Schema[8.1].define(version: 2025_12_10_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -25,22 +25,21 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_08_144844) do
     t.boolean "applied", default: false
     t.datetime "created_at", null: false
     t.integer "delta"
+    t.bigint "inventory_slot_id", null: false
     t.string "item_type"
-    t.integer "slot"
     t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
-    t.index ["user_id"], name: "index_inventory_item_mutations_on_user_id"
+    t.index ["inventory_slot_id"], name: "index_inventory_item_mutations_on_inventory_slot_id"
   end
 
   create_table "inventory_items", force: :cascade do |t|
     t.integer "count"
     t.datetime "created_at", null: false
-    t.integer "slot"
+    t.bigint "entity_id", null: false
+    t.bigint "loot_box_id"
     t.string "type"
     t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
-    t.index ["slot", "user_id"], name: "unique_inventory_items_on_slot_and_user_id", unique: true
-    t.index ["user_id"], name: "index_inventory_items_on_user_id"
+    t.index ["entity_id"], name: "index_inventory_items_on_entity_id"
+    t.index ["loot_box_id"], name: "index_inventory_items_on_loot_box_id"
   end
 
   create_table "inventory_slots", force: :cascade do |t|
@@ -66,12 +65,22 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_08_144844) do
     t.index ["loot_box_id"], name: "index_loot_box_loots_on_loot_box_id"
   end
 
+  create_table "loot_box_modifiers", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "loot_box_id", null: false
+    t.string "type", null: false
+    t.datetime "updated_at", null: false
+    t.index ["loot_box_id"], name: "index_loot_box_modifiers_on_loot_box_id"
+  end
+
   create_table "loot_boxes", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.bigint "entity_id", null: false
     t.datetime "opened_at"
     t.string "type"
     t.datetime "updated_at", null: false
     t.bigint "user_id", null: false
+    t.index ["entity_id"], name: "index_loot_boxes_on_entity_id"
     t.index ["user_id"], name: "index_loot_boxes_on_user_id"
   end
 
@@ -234,12 +243,15 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_08_144844) do
   end
 
   add_foreign_key "entities", "users"
-  add_foreign_key "inventory_item_mutations", "users"
-  add_foreign_key "inventory_items", "users"
+  add_foreign_key "inventory_item_mutations", "inventory_slots"
+  add_foreign_key "inventory_items", "entities"
+  add_foreign_key "inventory_items", "loot_boxes"
   add_foreign_key "inventory_slots", "entities"
   add_foreign_key "inventory_slots", "inventory_items"
   add_foreign_key "loot_box_loots", "inventory_items"
   add_foreign_key "loot_box_loots", "loot_boxes"
+  add_foreign_key "loot_box_modifiers", "loot_boxes"
+  add_foreign_key "loot_boxes", "entities"
   add_foreign_key "loot_boxes", "users"
   add_foreign_key "player_action_states", "users"
   add_foreign_key "sessions", "users"

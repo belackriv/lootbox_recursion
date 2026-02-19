@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_09_143000) do
+ActiveRecord::Schema[8.1].define(version: 2025_12_10_000001) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -63,6 +63,14 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_09_143000) do
     t.datetime "updated_at", null: false
     t.index ["inventory_item_id"], name: "index_loot_box_loots_on_inventory_item_id"
     t.index ["loot_box_id"], name: "index_loot_box_loots_on_loot_box_id"
+  end
+
+  create_table "loot_box_modifiers", force: :cascade do |t|
+    t.datetime "created_at", null: false
+    t.bigint "loot_box_id", null: false
+    t.string "type", null: false
+    t.datetime "updated_at", null: false
+    t.index ["loot_box_id"], name: "index_loot_box_modifiers_on_loot_box_id"
   end
 
   create_table "loot_boxes", force: :cascade do |t|
@@ -242,6 +250,7 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_09_143000) do
   add_foreign_key "inventory_slots", "inventory_items"
   add_foreign_key "loot_box_loots", "inventory_items"
   add_foreign_key "loot_box_loots", "loot_boxes"
+  add_foreign_key "loot_box_modifiers", "loot_boxes"
   add_foreign_key "loot_boxes", "entities"
   add_foreign_key "loot_boxes", "users"
   add_foreign_key "player_action_states", "users"

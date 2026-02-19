@@ -1,0 +1,42 @@
+loot_tables:
+  default:
+    rolls:
+      min: 2
+      max: 4
+    entries:
+      - item_type: "WoodInventoryItem"
+        weight: 60
+        min_count: 5
+        max_count: 20
+      - item_type: "IronInventoryItem"
+        weight: 40
+        min_count: 3
+        max_count: 10
+
+  WoodLootBox:
+    rolls:
+      min: 2
+      max: 5
+    entries:
+      - item_type: "WoodInventoryItem"
+        weight: 80
+        min_count: 10
+        max_count: 30
+      - item_type: "IronInventoryItem"
+        weight: 20
+        min_count: 1
+        max_count: 5
+
+  IronLootBox:
+    rolls:
+      min: 2
+      max: 5
+    entries:
+      - item_type: "IronInventoryItem"
+        weight: 80
+        min_count: 10
+        max_count: 30
+      - item_type: "WoodInventoryItem"
+        weight: 20
+        min_count: 1
+        max_count: 5
