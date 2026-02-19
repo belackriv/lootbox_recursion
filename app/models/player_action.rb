@@ -57,7 +57,7 @@ class PlayerAction
       if req["for_item_type"]
         item_count = user.send(req["check"]).where(type: req["for_item_type"]).sum(:count)
         condition = check_value_by_condition(item_count, req["condition"], req["value"])
-        #Rails.logger.debug("do #{req["check"]} #{req["for_item_type"]} check_value_by_condition(#{item_count}, #{req["condition"]}, #{req["value"]}) : #{condition}")
+        # Rails.logger.debug("do #{req["check"]} #{req["for_item_type"]} check_value_by_condition(#{item_count}, #{req["condition"]}, #{req["value"]}) : #{condition}")
         if !condition
           action_disabled = true
         end
