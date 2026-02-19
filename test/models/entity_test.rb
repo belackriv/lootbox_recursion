@@ -172,4 +172,89 @@ class EntityTest < ActiveSupport::TestCase
 
     assert entity.inventory_sort_needed?, "Split stacks that can be compressed should need sorting"
   end
+
+  # ── cleanup_orphaned_inventory_items! tests ──
+
+  test "cleanup_orphaned_inventory_items! destroys items not referenced by any slot" do
+    user = User.create!(email_address: "cleanup_orphan@example.com", password: "password")
+    entity = Entity.create!(user: user)
+    entity.ensure_inventory_slots
+
+    # Create an orphaned InventoryItem (belongs to entity but no slot points to it)
+    orphan = WoodInventoryItem.create!(entity: entity, count: 10)
+
+    assert_equal 1, entity.inventory_items.left_joins(:inventory_slot).where(inventory_slots: { id: nil }).count,
+      "Expected one orphaned InventoryItem before cleanup"
+
+    removed = entity.cleanup_orphaned_inventory_items!
+
+    assert_equal 1, removed, "Expected cleanup to report 1 removed orphan"
+    assert_not InventoryItem.exists?(orphan.id), "Orphaned InventoryItem should have been destroyed"
+  end
+
+  test "cleanup_orphaned_inventory_items! does not destroy items that are referenced by a slot" do
+    user = User.create!(email_address: "cleanup_safe@example.com", password: "password")
+    entity = Entity.create!(user: user)
+    entity.ensure_inventory_slots
+
+    slots = entity.inventory_slots.order(slot: :asc).to_a
+    slots.each { |s| s.update!(inventory_item: nil) }
+
+    item = IronInventoryItem.create!(entity: entity, count: 50)
+    slots[0].update!(inventory_item: item)
+
+    removed = entity.cleanup_orphaned_inventory_items!
+
+    assert_equal 0, removed, "Expected no items removed when all are slotted"
+    assert InventoryItem.exists?(item.id), "Slotted InventoryItem should still exist"
+  end
+
+  test "cleanup_orphaned_inventory_items! returns 0 when there are no orphans" do
+    user = User.create!(email_address: "cleanup_none@example.com", password: "password")
+    entity = Entity.create!(user: user)
+    entity.ensure_inventory_slots
+
+    removed = entity.cleanup_orphaned_inventory_items!
+
+    assert_equal 0, removed
+  end
+
+  test "cleanup_orphaned_inventory_items! only affects its own entity" do
+    user_a = User.create!(email_address: "cleanup_a@example.com", password: "password")
+    entity_a = Entity.create!(user: user_a)
+    entity_a.ensure_inventory_slots
+
+    user_b = User.create!(email_address: "cleanup_b@example.com", password: "password")
+    entity_b = Entity.create!(user: user_b)
+    entity_b.ensure_inventory_slots
+
+    # Create orphans on both entities
+    orphan_a = WoodInventoryItem.create!(entity: entity_a, count: 5)
+    orphan_b = IronInventoryItem.create!(entity: entity_b, count: 5)
+
+    removed = entity_a.cleanup_orphaned_inventory_items!
+
+    assert_equal 1, removed
+    assert_not InventoryItem.exists?(orphan_a.id), "Entity A's orphan should be destroyed"
+    assert InventoryItem.exists?(orphan_b.id), "Entity B's orphan should be untouched"
+  end
+
+  test "cleanup_all_orphaned_inventory_items! cleans up across all entities" do
+    user_a = User.create!(email_address: "cleanup_all_a@example.com", password: "password")
+    entity_a = Entity.create!(user: user_a)
+    entity_a.ensure_inventory_slots
+
+    user_b = User.create!(email_address: "cleanup_all_b@example.com", password: "password")
+    entity_b = Entity.create!(user: user_b)
+    entity_b.ensure_inventory_slots
+
+    orphan_a = WoodInventoryItem.create!(entity: entity_a, count: 5)
+    orphan_b = IronInventoryItem.create!(entity: entity_b, count: 10)
+
+    total = Entity.cleanup_all_orphaned_inventory_items!
+
+    assert_operator total, :>=, 2, "Expected at least 2 orphans destroyed across all entities"
+    assert_not InventoryItem.exists?(orphan_a.id), "Entity A's orphan should be destroyed"
+    assert_not InventoryItem.exists?(orphan_b.id), "Entity B's orphan should be destroyed"
+  end
 end

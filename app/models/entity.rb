@@ -90,6 +90,31 @@ class Entity < ApplicationRecord
     mutations
   end
 
+  # Destroy InventoryItems belonging to this entity that are not referenced by any InventorySlot.
+  # Returns the number of orphaned records removed.
+  def cleanup_orphaned_inventory_items!
+    orphans = inventory_items
+      .left_joins(:inventory_slot)
+      .where(inventory_slots: { id: nil })
+
+    count = orphans.count
+    if count > 0
+      Rails.logger.info("[Entity#cleanup_orphaned_inventory_items!] entity=#{id} destroying #{count} orphaned InventoryItem(s)")
+      orphans.destroy_all
+    end
+    count
+  end
+
+  # Run cleanup across every entity in the database. Useful from a console or rake task.
+  def self.cleanup_all_orphaned_inventory_items!
+    total = 0
+    Entity.find_each do |entity|
+      total += entity.cleanup_orphaned_inventory_items!
+    end
+    Rails.logger.info("[Entity.cleanup_all_orphaned_inventory_items!] destroyed #{total} orphaned InventoryItem(s) total")
+    total
+  end
+
   def inventory_sort_needed?
     ensure_inventory_slots
 
@@ -136,12 +161,14 @@ class Entity < ApplicationRecord
           inventory_slot.update!(inventory_item: new_item)
 
           if old_item
+            old_item.reload
             old_item.destroy! if old_item.inventory_slot.nil?
           end
         end
       end
     end
 
+    cleanup_orphaned_inventory_items!
     trigger_action_state_update
 
     {

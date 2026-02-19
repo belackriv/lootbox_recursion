@@ -4,9 +4,8 @@ import type { InventoryGridSlot } from "@/types/index.ts";
 
 const updated = ref(false);
 const props = defineProps<{ gridSlot: InventoryGridSlot }>();
-console.log(props.gridSlot);
+
 watch(props.gridSlot, () => {
-  console.log(props.gridSlot);
   updated.value = true;
   setTimeout(() => {
     updated.value = false;
