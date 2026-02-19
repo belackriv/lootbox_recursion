@@ -122,10 +122,17 @@ class Entity < ApplicationRecord
 
     current_sequence = []
     slots.each do |inventory_slot|
-      next if inventory_slot.inventory_item.nil?
-      next if inventory_slot.inventory_item.count.to_i <= 0
-
-      current_sequence << { type: inventory_slot.inventory_item.type, count: inventory_slot.inventory_item.count.to_i }
+      if inventory_slot.inventory_item.nil? or inventory_slot.inventory_item.count.to_i <= 0
+        current_sequence << {
+          type: nil,
+          count: 0
+        }
+      else
+        current_sequence << {
+          type: inventory_slot.inventory_item.type,
+          count: inventory_slot.inventory_item.count.to_i
+        }
+      end
     end
 
     expected_sequence = build_sorted_stacks(slots)
@@ -138,12 +145,12 @@ class Entity < ApplicationRecord
 
     slots = inventory_slots.includes(:inventory_item).order(slot: :asc)
     rebuilt_stacks = build_sorted_stacks(slots)
-
+    Rails.logger.debug("rebuilt_stacks: #{rebuilt_stacks.inspect}")
     ApplicationRecord.transaction do
       slots.each_with_index do |inventory_slot, index|
         desired = rebuilt_stacks[index]
 
-        if desired.nil?
+        if desired.nil? || desired[:type].nil?
           if inventory_slot.inventory_item
             old_item = inventory_slot.inventory_item
             inventory_slot.update!(inventory_item: nil)
@@ -172,8 +179,8 @@ class Entity < ApplicationRecord
     trigger_action_state_update
 
     {
-      item_types: rebuilt_stacks.map { |s| s[:type] }.uniq.length,
-      slots_used: rebuilt_stacks.length
+      item_types: rebuilt_stacks.filter_map { |s| s[:type] }.uniq.length,
+      slots_used: rebuilt_stacks.count { |s| s[:type].present? }
     }
   end
 
@@ -203,6 +210,15 @@ class Entity < ApplicationRecord
         stacks << { type: type, count: stack_count }
         total_count -= stack_count
       end
+    end
+
+    # Pad with empty-slot entries so the array length matches the total number of
+    # slots. This is required for the comparison in inventory_sort_needed? to be
+    # position-aware: current_sequence now includes { type: nil, count: 0 } for
+    # every empty slot, so expected_sequence must do the same.
+    total_slots = slots.length
+    while stacks.length < total_slots
+      stacks << { type: nil, count: 0 }
     end
 
     stacks

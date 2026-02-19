@@ -429,7 +429,8 @@ class LootBoxTest < ActiveSupport::TestCase
     assert_not_empty loot_records, "Expected LootBoxLoot records to be created"
     loot_records.each do |record|
       assert_equal loot_box.id, record.loot_box_id
-      assert_not_nil record.inventory_item_id
+      assert_not_nil record.item_snapshot, "Expected item_snapshot to be present"
+      assert_not_nil record.item_snapshot["type"], "Expected item_snapshot to include item type"
       assert_equal true, record.claimed
       assert record.count.to_i > 0, "Expected loot count > 0"
     end

@@ -47,6 +47,7 @@ class PlayerAction
     if name == "sort_inventory"
       on_cooldown = on_cooldown_until && on_cooldown_until > Time.current
       sort_needed = user.entity.present? && user.entity.inventory_sort_needed?
+      # Rails.logger.debug("sort_needed? #{sort_needed}")
       self.disabled = on_cooldown || !sort_needed
       return
     end
@@ -56,7 +57,7 @@ class PlayerAction
       if req["for_item_type"]
         item_count = user.send(req["check"]).where(type: req["for_item_type"]).sum(:count)
         condition = check_value_by_condition(item_count, req["condition"], req["value"])
-        # Rails.logger.debug("do #{req["check"]} #{req["for_item_type"]} check_value_by_condition(#{item_count}, #{req["condition"]}, #{req["value"]}) : #{condition}")
+        #Rails.logger.debug("do #{req["check"]} #{req["for_item_type"]} check_value_by_condition(#{item_count}, #{req["condition"]}, #{req["value"]}) : #{condition}")
         if !condition
           action_disabled = true
         end

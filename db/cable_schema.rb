@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2025_12_10_000001) do
+ActiveRecord::Schema[8.1].define(version: 2026_02_19_222031) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -57,11 +57,10 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_10_000001) do
     t.boolean "claimed"
     t.integer "count"
     t.datetime "created_at", null: false
-    t.integer "inventory_item_id", null: false
+    t.jsonb "item_snapshot", null: false
     t.integer "loot_box_id", null: false
     t.string "type"
     t.datetime "updated_at", null: false
-    t.index ["inventory_item_id"], name: "index_loot_box_loots_on_inventory_item_id"
     t.index ["loot_box_id"], name: "index_loot_box_loots_on_loot_box_id"
   end
 
@@ -248,7 +247,6 @@ ActiveRecord::Schema[8.1].define(version: 2025_12_10_000001) do
   add_foreign_key "inventory_items", "loot_boxes"
   add_foreign_key "inventory_slots", "entities"
   add_foreign_key "inventory_slots", "inventory_items"
-  add_foreign_key "loot_box_loots", "inventory_items"
   add_foreign_key "loot_box_loots", "loot_boxes"
   add_foreign_key "loot_box_modifiers", "loot_boxes"
   add_foreign_key "loot_boxes", "entities"

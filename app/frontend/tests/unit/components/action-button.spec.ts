@@ -1,5 +1,5 @@
 /// <reference types="vitest" />
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { mount } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
 import { nextTick } from "vue";
@@ -289,5 +289,137 @@ describe("ActionButton - use action disabled state", () => {
     });
 
     expect(wrapper.find("button").text()).toContain("Use");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// ActionButton - click sends correct actionData
+// ---------------------------------------------------------------------------
+
+describe("ActionButton - onClick actionData payload", () => {
+  let pinia: ReturnType<typeof createPinia>;
+
+  beforeEach(() => {
+    pinia = createPinia();
+    setActivePinia(pinia);
+    // Stub requestAnimationFrame so cast-time animation loop doesn't interfere
+    vi.stubGlobal("requestAnimationFrame", vi.fn());
+  });
+
+  function mountWithMockChannel(
+    props: PlayerAction,
+    mockSend: ReturnType<typeof vi.fn>
+  ) {
+    return mount(ActionButton, {
+      global: {
+        plugins: [pinia],
+        provide: {
+          playerActionsChannel: { send: mockSend },
+        },
+      },
+      props,
+    });
+  }
+
+  // ─── use action passes slotNumber ──────────────────────────────────────────
+
+  it("passes { slotNumber } in actionData when clicking use with a loot box slot selected", async () => {
+    const store = usePlayerStore();
+    seedSlot(store, 4, LOOTBOX_ITEM_TYPE, 1);
+    store.selectSlot(4);
+
+    const mockSend = vi.fn();
+    const wrapper = mountWithMockChannel(USE_ACTION, mockSend);
+
+    await wrapper.find("button").trigger("click");
+
+    expect(mockSend).toHaveBeenCalledOnce();
+    const [_action, data] = mockSend.mock.calls[0];
+    expect(data).toEqual({ slotNumber: 4 });
+  });
+
+  it("passes { slotNumber } matching the selected slot number", async () => {
+    const store = usePlayerStore();
+    seedSlot(store, 17, LOOTBOX_ITEM_TYPE, 1);
+    store.selectSlot(17);
+
+    const mockSend = vi.fn();
+    const wrapper = mountWithMockChannel(USE_ACTION, mockSend);
+
+    await wrapper.find("button").trigger("click");
+
+    expect(mockSend).toHaveBeenCalledOnce();
+    const [_action, data] = mockSend.mock.calls[0];
+    expect(data).toEqual({ slotNumber: 17 });
+  });
+
+  it("passes the action name 'use' alongside the slot data", async () => {
+    const store = usePlayerStore();
+    seedSlot(store, 2, LOOTBOX_ITEM_TYPE, 1);
+    store.selectSlot(2);
+
+    const mockSend = vi.fn();
+    const wrapper = mountWithMockChannel(USE_ACTION, mockSend);
+
+    await wrapper.find("button").trigger("click");
+
+    expect(mockSend).toHaveBeenCalledOnce();
+    const [action, _data] = mockSend.mock.calls[0];
+    expect(action.name).toBe("use");
+  });
+
+  it("does not fire when use button is disabled (no loot box selected)", async () => {
+    // No slot selected → isDisabled = true → onClick returns early
+    const mockSend = vi.fn();
+    const wrapper = mountWithMockChannel(USE_ACTION, mockSend);
+
+    await wrapper.find("button").trigger("click");
+
+    expect(mockSend).not.toHaveBeenCalled();
+  });
+
+  // ─── non-use actions pass null ────────────────────────────────────────────
+
+  it("passes null actionData when clicking scavenge", async () => {
+    const mockSend = vi.fn();
+    const wrapper = mountWithMockChannel(
+      { ...SCAVENGE_ACTION, disabled: false },
+      mockSend
+    );
+
+    await wrapper.find("button").trigger("click");
+
+    expect(mockSend).toHaveBeenCalledOnce();
+    const [action, data] = mockSend.mock.calls[0];
+    expect(action.name).toBe("scavenge");
+    expect(data).toBeNull();
+  });
+
+  it("does not fire when a non-use action is disabled", async () => {
+    const mockSend = vi.fn();
+    const wrapper = mountWithMockChannel(
+      { ...CRAFT_ACTION, disabled: true },
+      mockSend
+    );
+
+    await wrapper.find("button").trigger("click");
+
+    expect(mockSend).not.toHaveBeenCalled();
+  });
+
+  it("use action sends slotNumber 0 when slot 0 is selected", async () => {
+    const store = usePlayerStore();
+    seedSlot(store, 0, LOOTBOX_ITEM_TYPE, 1);
+    store.selectSlot(0);
+
+    const mockSend = vi.fn();
+    const wrapper = mountWithMockChannel(USE_ACTION, mockSend);
+
+    await wrapper.find("button").trigger("click");
+
+    expect(mockSend).toHaveBeenCalledOnce();
+    const [_action, data] = mockSend.mock.calls[0];
+    // slotNumber 0 is a valid value and must be sent, not treated as falsy null
+    expect(data).toEqual({ slotNumber: 0 });
   });
 });

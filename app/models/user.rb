@@ -74,7 +74,7 @@ class User < ApplicationRecord
   def perform_action(player_action_name, action_data)
     player_action = get_player_actions.find { |action| action.name == player_action_name }
     if player_action.on_cooldown_until and player_action.on_cooldown_until > Time.current
-      p "Action is on cooldown"
+      p "Action #{player_action_name} is on cooldown"
     else
       player_action.on_cooldown_until = Time.current + player_action.cooldown
       save_player_action_state(player_action)
@@ -98,6 +98,60 @@ class User < ApplicationRecord
   def get_craft_choices
     craft_choices = [ { class_name: "LootBox", label: "Lootbox" } ]
     craft_choices
+  end
+
+  def use(action_data)
+    slot_number = action_data&.dig("slot_number")
+
+    loot_box = nil
+
+    if slot_number.present?
+      slot = entity.inventory_slots.includes(:inventory_item).find_by(slot: slot_number)
+      item = slot&.inventory_item
+      if item.is_a?(LootBoxInventoryItem)
+        loot_box = item.loot_box
+
+        if loot_box.nil?
+          # loot_box_id is nil on this item (legacy/corrupted data). Log and attempt recovery.
+          Rails.logger.warn(
+            "User#use: LootBoxInventoryItem id=#{item.id} has nil loot_box_id " \
+            "(user=#{id} slot_number=#{slot_number}); attempting recovery via user.loot_boxes"
+          )
+        end
+      end
+    end
+
+    # If we still don't have a loot_box, look one up directly through the user association.
+    # This is more reliable than traversing item.loot_box when loot_box_id may be nil.
+    if loot_box.nil?
+      loot_box = loot_boxes.where(entity: entity, opened_at: nil).first
+      Rails.logger.info("User#use: resolved loot_box=#{loot_box&.id} via loot_boxes (user=#{id} slot_number=#{slot_number.inspect})")
+    end
+
+    # If the LootBox was found but its loot_box_inventory_item link is broken
+    # (i.e. no inventory_item row has loot_box_id pointing back to it), repair it
+    # by linking the first orphaned LootBoxInventoryItem belonging to this entity.
+    if loot_box && loot_box.loot_box_inventory_item.nil?
+      orphan = entity.inventory_slots
+        .joins(:inventory_item)
+        .where(inventory_items: { type: "LootBoxInventoryItem", loot_box_id: nil })
+        .first
+        &.inventory_item
+      if orphan
+        orphan.update!(loot_box: loot_box)
+        Rails.logger.info(
+          "User#use: repaired orphaned LootBoxInventoryItem id=#{orphan.id} " \
+          "→ loot_box id=#{loot_box.id} (user=#{id})"
+        )
+      end
+    end
+
+    if loot_box.nil?
+      Rails.logger.warn("User#use: no openable loot box found for user=#{id} slot_number=#{slot_number.inspect}")
+      return { success: false, reason: "no_loot_box" }
+    end
+
+    loot_box.open!
   end
 
   def sort_inventory(action_data)

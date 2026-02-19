@@ -1,5 +1,7 @@
 # Loot Box Opening — Implementation Plan
 
+> **Status:** Fully implemented. All checklist items below are complete.
+
 ## Overview
 
 When a player "uses" a loot box, `LootBox#open!` is called on the specific `LootBox`
@@ -294,11 +296,58 @@ No other migrations are required. The existing schema already provides:
 
 ## File Checklist
 
-- [ ] `app/data/loot_tables.yml` — base loot table config (default + WoodLootBox + IronLootBox)
-- [ ] `app/models/loot_table.rb` — PORO loader + multi-roll weighted roller
-- [ ] `app/models/loot_box_modifier.rb` — abstract AR base class with no-op `apply`
-- [ ] Migration: `create_loot_box_modifiers`
-- [ ] `app/models/loot_box.rb` — add `has_many :loot_box_modifiers` + `open!` method
+- [x] `app/data/loot_tables.yml` — base loot table config (default + WoodLootBox + IronLootBox)
+- [x] `app/models/loot_table.rb` — PORO loader + multi-roll weighted roller
+- [x] `app/models/loot_box_modifier.rb` — abstract AR base class with no-op `apply`
+- [x] Migration: `db/migrate/20251210000001_create_loot_box_modifiers.rb`
+- [x] `app/models/loot_box.rb` — add `has_many :loot_box_modifiers` + `open!` method
+- [x] `app/models/user.rb` — add `User#use(action_data)` delegating to `loot_box.open!`
+- [x] `app/data/player_actions.yml` — fix `use` requirement value from `1` → `0` (enable when count > 0)
+- [x] `app/frontend/Shared/ActionButton.vue` — pass `{ slotIndex }` as actionData on "use" click
+- [x] `test/models/loot_table_test.rb` — 18 unit tests for `LootTable` PORO
+- [x] `test/models/loot_box_test.rb` — 12 new `open!` integration tests
+- [x] `test/models/user_test.rb` — 10 new `User#use` integration tests
+- [x] `app/frontend/tests/unit/components/action-button.spec.ts` — 7 new click/payload tests
+
+---
+
+---
+
+## Frontend Wiring
+
+The "Use" button triggers `LootBox#open!` through the existing ActionCable pipeline:
+
+```
+Player selects inventory slot (LootBoxInventoryItem)
+  │
+  └─ ActionButton "Use" becomes enabled
+       (isDisabled computed: store.selectedSlotItem?.type === LOOTBOX_ITEM_TYPE)
+
+Player clicks "Use"
+  │
+  └─ ActionButton#onClick captures store.selectedSlotIndex at click time
+       → performAction({ slotIndex: N })
+       → store.performPlayerAction(action, { slotIndex: N }, playerActionsChannel)
+       → PlayerActionsChannel.send({ playerAction: ..., playerActionData: { slotIndex: N } })
+
+Server (PlayerActionsChannel#receive)
+  │
+  └─ snake_case_keys → { "player_action" => ..., "player_action_data" => { "slot_index" => N } }
+  └─ current_user.perform_action("use", { "slot_index" => N })
+  └─ PerformPlayerActionJob.set(wait: cast_time.seconds).perform_later(user, "use", data)
+
+Job fires (after 5 s cast time)
+  │
+  └─ user.use({ "slot_index" => N })
+       ├─ Look up entity.inventory_slots.find_by(slot: N)
+       ├─ Verify slot holds a LootBoxInventoryItem
+       ├─ loot_box = item.loot_box
+       └─ loot_box.open!  →  broadcasts mutations, triggers action state update
+```
+
+**Fallback behaviour:** if `slot_index` is absent or points to a non-loot-box slot,
+`User#use` falls back to the first available `LootBoxInventoryItem` in the entity's
+inventory before giving up with `{ success: false, reason: "no_loot_box" }`.
 
 ---
 

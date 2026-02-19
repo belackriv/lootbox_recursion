@@ -41,7 +41,7 @@ player_actions:
       - check: "inventory_items"
         for_item_type: "LootBoxInventoryItem"
         condition: "gt"
-        value: 1
+        value: 0
     reveal_requirements: []
 
   - name: "sort_inventory"

@@ -163,11 +163,12 @@ class LootBox < ApplicationRecord
           end
 
           add_mutations.each do |m|
+            item = m.inventory_slot.inventory_item
             loot << LootBoxLoot.create!(
-              loot_box:       self,
-              inventory_item: m.inventory_slot.inventory_item,
-              count:          m.delta,
-              claimed:        true
+              loot_box:      self,
+              item_snapshot: { "type" => item.type, "count" => m.delta },
+              count:         m.delta,
+              claimed:       true
             )
           end
 

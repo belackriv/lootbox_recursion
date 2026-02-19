@@ -16,7 +16,7 @@ class PlayerActionsChannel {
         connected: () => {},
         disconnected: () => {},
         received: (playerActions: Array<PlayerAction>) => {
-          console.log("Received player actions:", playerActions);
+          //console.log("Received player actions:", playerActions);
           const store = usePlayerStore();
           store.updateAvailableActions(playerActions);
         },

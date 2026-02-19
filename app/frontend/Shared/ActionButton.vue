@@ -52,7 +52,17 @@ const onClick = () => {
   if (onCooldown.value || castTimeProgress.value > 0) {
     return false;
   }
-  performAction(null);
+  if (props.name === "use") {
+    // Capture the selected slot at click time so it remains correct even if
+    // the player deselects during the cast time animation.
+    const actionData =
+      store.selectedSlotIndex !== null
+        ? { slotNumber: store.selectedSlotIndex }
+        : null;
+    performAction(actionData);
+  } else {
+    performAction(null);
+  }
 };
 </script>
 
