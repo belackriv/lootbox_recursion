@@ -24,9 +24,6 @@ class User < ApplicationRecord
   def get_player_actions
     if @player_actions.nil?
       @player_actions = APP_DATA[:player_actions]
-      @player_actions.each do |action|
-          action.update(self)
-        end
     end
     # load the user's player action state and update player_actions
     @player_actions.each do |action|
@@ -34,6 +31,11 @@ class User < ApplicationRecord
       if player_action_state
         action.assign_attributes(player_action_state.action_state)
       end
+    end
+    # Recompute dynamic fields (disabled, revealed, choices) AFTER restoring
+    # persisted state so that stale DB values never override a fresh check.
+    @player_actions.each do |action|
+      action.update(self)
     end
     @player_actions
   end
