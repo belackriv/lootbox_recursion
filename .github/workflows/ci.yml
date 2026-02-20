@@ -120,6 +120,9 @@ jobs:
       - name: Install JavaScript dependencies
         run: npm ci
 
+      - name: Build Vite assets
+        run: npm run build
+
       - name: Wait for Postgres
         run: |
           for i in {1..20}; do
