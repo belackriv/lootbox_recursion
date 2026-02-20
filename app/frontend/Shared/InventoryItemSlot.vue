@@ -2,6 +2,7 @@
 import { ref, watch, computed } from "vue";
 import type { InventoryGridSlot } from "@/types/index.ts";
 import { usePlayerStore } from "@/store/player.ts";
+import ItemSprite from "@/Sprites/ItemSprite.vue";
 
 const updated = ref(false);
 const props = defineProps<{ gridSlot: InventoryGridSlot }>();
@@ -11,49 +12,43 @@ const isSelected = computed(
   () => store.selectedSlotIndex === props.gridSlot.slot.slot
 );
 
+const hasItem = computed(() => !!props.gridSlot.slot.inventoryItem?.type);
+
+const itemCount = computed(
+  () => props.gridSlot.slot.inventoryItem?.count ?? null
+);
+
 watch(props.gridSlot, () => {
   updated.value = true;
   setTimeout(() => {
     updated.value = false;
-  }, 1000);
+  }, 500);
 });
 </script>
 
 <template>
   <div
-    class="w-16 h-16 flex-none border-2 transition-colors duration-150 relative cursor-pointer"
-    :class="
-      isSelected
-        ? 'border-yellow-400'
-        : 'border-slate-500 hover:border-slate-300'
-    "
+    class="fac-slot"
+    :class="{ selected: isSelected }"
     @click="store.selectSlot(props.gridSlot.slot.slot)"
+    :title="gridSlot.slot.inventoryItem?.type ?? ''"
   >
-    <div>
-      {{
-        gridSlot.slot.inventoryItem && gridSlot.slot.inventoryItem.type
-          ? gridSlot.slot.inventoryItem.type.slice(0, 1).toUpperCase()
-          : ""
-      }}
+    <!-- Item sprite -->
+    <div
+      v-if="hasItem"
+      style="position: absolute; inset: 2px; pointer-events: none"
+    >
+      <ItemSprite :item-type="gridSlot.slot.inventoryItem?.type" />
     </div>
-    <div>{{ gridSlot.slot.inventoryItem?.count }}</div>
+
+    <!-- Item count badge -->
+    <span v-if="hasItem && itemCount !== null" class="fac-slot-count">
+      {{ itemCount }}
+    </span>
+
+    <!-- Updated flash overlay -->
     <Transition name="fade">
-      <div
-        v-if="updated"
-        class="bg-slate-50 absolute top-0 left-0 w-15 h-15 opacity-50"
-      ></div>
+      <div v-if="updated" class="fac-slot-flash"></div>
     </Transition>
   </div>
 </template>
-
-<style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.5s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-</style>

@@ -1,11 +1,11 @@
 import vue from "@vitejs/plugin-vue";
-import tailwindcss from "@tailwindcss/vite";
+
 import { defineConfig } from "vite";
 import path from "path";
 import RubyPlugin from "vite-plugin-ruby";
 
 export default defineConfig({
-  plugins: [vue(), tailwindcss(), RubyPlugin()],
+  plugins: [vue(), RubyPlugin()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./app/frontend"),
