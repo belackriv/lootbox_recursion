@@ -1,6 +1,7 @@
 player_actions:
   - name: "scavenge"
     label: "Scavenge"
+    tooltip: "Search the area for raw materials. Takes time but yields wood and iron."
     disabled: false
     revealed: true
     cooldown: 5
@@ -12,6 +13,7 @@ player_actions:
 
   - name: "craft"
     label: "Craft"
+    tooltip: "Craft items from your gathered materials. Requires 50+ wood and 50+ iron."
     disabled: true
     revealed: true
     cooldown: 5
@@ -31,6 +33,7 @@ player_actions:
 
   - name: "use"
     label: "Use"
+    tooltip: "Use the selected item. Select a loot box from your inventory to open it."
     disabled: true
     revealed: true
     cooldown: 5
@@ -46,6 +49,7 @@ player_actions:
 
   - name: "sort_inventory"
     label: "Sort"
+    tooltip: "Automatically sort and consolidate your inventory slots."
     disabled: true
     revealed: true
     cooldown: 1

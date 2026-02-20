@@ -1,19 +1,35 @@
 <script setup lang="ts">
 import type { PlayerAction } from "@/types/index.ts";
+import { usePlayerStore } from "@/store/player.ts";
 
-defineProps<{
+const props = defineProps<{
   action: PlayerAction | undefined;
   showCraftingTray: boolean;
 }>();
+
 const emit = defineEmits<{
   (e: "toggleCraftTray"): void;
 }>();
+
+const store = usePlayerStore();
+
+const onMouseEnter = () => {
+  if (props.action?.tooltip) {
+    store.setTooltip({ title: "Craft", body: props.action.tooltip });
+  }
+};
+
+const onMouseLeave = () => {
+  store.clearTooltip();
+};
 </script>
 
 <template>
   <button
     :disabled="action?.disabled"
     @click="$emit('toggleCraftTray')"
+    @mouseenter="onMouseEnter"
+    @mouseleave="onMouseLeave"
     class="fac-btn"
     style="min-width: 80px; gap: 6px"
   >

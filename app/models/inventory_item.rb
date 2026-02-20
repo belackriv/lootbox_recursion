@@ -17,10 +17,20 @@ class InventoryItem < ApplicationRecord
     self.class.display_name
   end
 
+  def self.tooltip
+    const_defined?(:TOOLTIP) ? const_get(:TOOLTIP) : nil
+  end
+
+  def tooltip
+    self.class.tooltip
+  end
+
   def to_jbuilder(tags = [ "default" ])
     Jbuilder.new do |jbuilder|
       if tags.include?("default")
         jbuilder.extract!(self, :id, :type, :count, :entity_id)
+        jbuilder.display_name display_name
+        jbuilder.tooltip tooltip
       end
     end
   end

@@ -7,7 +7,11 @@ import InventoryItemSlot from "../../../Shared/InventoryItemSlot.vue";
 import { usePlayerStore } from "../../../store/player";
 import type { InventoryGridSlot } from "../../../types/index";
 
-function makeGridSlot(slotNumber: number, type?: string, count?: number): InventoryGridSlot {
+function makeGridSlot(
+  slotNumber: number,
+  type?: string,
+  count?: number
+): InventoryGridSlot {
   return {
     slot: {
       slot: slotNumber,
@@ -28,7 +32,7 @@ describe("InventoryItemSlot - selection", () => {
 
   // ─── Border class ─────────────────────────────────────────────────────────
 
-  it("has the default slate border when no slot is selected", () => {
+  it("has the default slot style (no selected class) when no slot is selected", () => {
     const gridSlot = makeGridSlot(0);
 
     const wrapper = mount(InventoryItemSlot, {
@@ -36,11 +40,11 @@ describe("InventoryItemSlot - selection", () => {
       props: { gridSlot },
     });
 
-    expect(wrapper.classes()).toContain("border-slate-500");
-    expect(wrapper.classes()).not.toContain("border-yellow-400");
+    expect(wrapper.classes()).toContain("fac-slot");
+    expect(wrapper.classes()).not.toContain("selected");
   });
 
-  it("has the construction yellow border when its slot is selected", async () => {
+  it("has the selected class when its slot is selected", async () => {
     const store = usePlayerStore();
     store.selectSlot(0);
 
@@ -53,11 +57,10 @@ describe("InventoryItemSlot - selection", () => {
 
     await nextTick();
 
-    expect(wrapper.classes()).toContain("border-yellow-400");
-    expect(wrapper.classes()).not.toContain("border-slate-500");
+    expect(wrapper.classes()).toContain("selected");
   });
 
-  it("keeps the default slate border when a different slot is selected", async () => {
+  it("does not have the selected class when a different slot is selected", async () => {
     const store = usePlayerStore();
     store.selectSlot(1); // select slot 1, not slot 0
 
@@ -70,11 +73,11 @@ describe("InventoryItemSlot - selection", () => {
 
     await nextTick();
 
-    expect(wrapper.classes()).toContain("border-slate-500");
-    expect(wrapper.classes()).not.toContain("border-yellow-400");
+    expect(wrapper.classes()).not.toContain("selected");
+    expect(wrapper.classes()).toContain("fac-slot");
   });
 
-  it("updates to yellow border reactively when its slot becomes selected", async () => {
+  it("gains the selected class reactively when its slot becomes selected", async () => {
     const store = usePlayerStore();
     const gridSlot = makeGridSlot(3);
 
@@ -84,16 +87,15 @@ describe("InventoryItemSlot - selection", () => {
     });
 
     // initially not selected
-    expect(wrapper.classes()).toContain("border-slate-500");
+    expect(wrapper.classes()).not.toContain("selected");
 
     store.selectSlot(3);
     await nextTick();
 
-    expect(wrapper.classes()).toContain("border-yellow-400");
-    expect(wrapper.classes()).not.toContain("border-slate-500");
+    expect(wrapper.classes()).toContain("selected");
   });
 
-  it("reverts to slate border reactively when its slot becomes deselected", async () => {
+  it("loses the selected class reactively when its slot becomes deselected", async () => {
     const store = usePlayerStore();
     store.selectSlot(3);
 
@@ -105,17 +107,17 @@ describe("InventoryItemSlot - selection", () => {
     });
 
     await nextTick();
-    expect(wrapper.classes()).toContain("border-yellow-400");
+    expect(wrapper.classes()).toContain("selected");
 
     // deselect by clicking again (toggle)
     store.selectSlot(3);
     await nextTick();
 
-    expect(wrapper.classes()).toContain("border-slate-500");
-    expect(wrapper.classes()).not.toContain("border-yellow-400");
+    expect(wrapper.classes()).not.toContain("selected");
+    expect(wrapper.classes()).toContain("fac-slot");
   });
 
-  it("loses yellow border when selection moves to a different slot", async () => {
+  it("loses the selected class when selection moves to a different slot", async () => {
     const store = usePlayerStore();
     store.selectSlot(5);
 
@@ -127,14 +129,14 @@ describe("InventoryItemSlot - selection", () => {
     });
 
     await nextTick();
-    expect(wrapper.classes()).toContain("border-yellow-400");
+    expect(wrapper.classes()).toContain("selected");
 
     // select a different slot
     store.selectSlot(9);
     await nextTick();
 
-    expect(wrapper.classes()).toContain("border-slate-500");
-    expect(wrapper.classes()).not.toContain("border-yellow-400");
+    expect(wrapper.classes()).not.toContain("selected");
+    expect(wrapper.classes()).toContain("fac-slot");
   });
 
   // ─── Click behaviour ──────────────────────────────────────────────────────
@@ -200,9 +202,9 @@ describe("InventoryItemSlot - selection", () => {
     expect(store.selectedSlotIndex).toBe(6);
   });
 
-  // ─── cursor style ─────────────────────────────────────────────────────────
+  // ─── Slot class ────────────────────────────────────────────────────────────
 
-  it("has cursor-pointer class to indicate the slot is interactive", () => {
+  it("always has the fac-slot class to indicate it is an inventory slot", () => {
     const gridSlot = makeGridSlot(0);
 
     const wrapper = mount(InventoryItemSlot, {
@@ -210,6 +212,6 @@ describe("InventoryItemSlot - selection", () => {
       props: { gridSlot },
     });
 
-    expect(wrapper.classes()).toContain("cursor-pointer");
+    expect(wrapper.classes()).toContain("fac-slot");
   });
 });

@@ -325,9 +325,7 @@ describe("ActionButton - use action disabled state", () => {
       await wrapper.find("button").trigger("click");
       await nextTick();
 
-      expect(wrapper.find(".border-red-900").element.style.display).toBe(
-        "block"
-      );
+      expect(wrapper.classes()).toContain("fac-btn--cooldown");
     });
 
     it("keeps cooldown overlay visible while still within the cooldown window", async () => {
@@ -338,9 +336,7 @@ describe("ActionButton - use action disabled state", () => {
       vi.advanceTimersByTime(500);
       await nextTick();
 
-      expect(wrapper.find(".border-red-900").element.style.display).toBe(
-        "block"
-      );
+      expect(wrapper.classes()).toContain("fac-btn--cooldown");
     });
 
     it("removes cooldown overlay after the cooldown duration has elapsed", async () => {
@@ -351,9 +347,7 @@ describe("ActionButton - use action disabled state", () => {
       vi.advanceTimersByTime(1001);
       await nextTick();
 
-      expect(wrapper.find(".border-red-900").element.style.display).toBe(
-        "none"
-      );
+      expect(wrapper.classes()).not.toContain("fac-btn--cooldown");
     });
 
     it("does not get stuck permanently on cooldown when castTime is 0", async () => {
@@ -364,9 +358,7 @@ describe("ActionButton - use action disabled state", () => {
       vi.advanceTimersByTime(1001);
       await nextTick();
 
-      expect(wrapper.find(".border-red-900").element.style.display).toBe(
-        "none"
-      );
+      expect(wrapper.classes()).not.toContain("fac-btn--cooldown");
     });
 
     it("cannot be clicked again while on cooldown", async () => {

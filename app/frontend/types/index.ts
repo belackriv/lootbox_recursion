@@ -27,6 +27,8 @@ export type Entity = {
 export type InventoryItem = {
   type: string;
   count: number;
+  displayName?: string | null;
+  tooltip?: string | null;
 };
 
 export type InventorySlot = {
@@ -44,6 +46,7 @@ export type InventoryGridSlot = {
 export type PlayerAction = {
   name: string;
   label: string;
+  tooltip?: string | null;
   disabled: boolean;
   revealed: boolean;
   cooldown: number;

@@ -13,6 +13,7 @@ class PlayerAction
   attribute :choices, ArrayType
   attribute :requirements, ArrayType
   attribute :reveal_requirements, ArrayType
+  attribute :tooltip, :string
 
   def to_jbuilder(tags = [ "default" ])
     Jbuilder.new do |jbuilder|
@@ -27,11 +28,14 @@ class PlayerAction
           :cast_time,
           :choices,
           :requirements,
-          :reveal_requirements
+          :reveal_requirements,
+          :tooltip
         )
       end
     end
   end
+
+  DYNAMIC_ACTION_ATTRIBUTES = %w[on_cooldown_until disabled revealed].freeze
 
   def persisted?
     false

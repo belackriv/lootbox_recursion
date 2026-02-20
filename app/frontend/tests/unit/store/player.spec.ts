@@ -40,7 +40,7 @@ describe("player store - mutateInventory", () => {
 
     const updated = getGridSlot(store, targetSlot).slot.inventoryItem;
     expect(updated).not.toBeNull();
-    expect(updated).toEqual({ type: "IronInventoryItem", count: 2 });
+    expect(updated).toMatchObject({ type: "IronInventoryItem", count: 2 });
   });
 
   it("applies item_type + delta to update an existing stack", () => {

@@ -8,6 +8,19 @@ const updated = ref(false);
 const props = defineProps<{ gridSlot: InventoryGridSlot }>();
 const store = usePlayerStore();
 
+const onMouseEnter = () => {
+  const item = props.gridSlot.slot.inventoryItem;
+  if (!item) return;
+  store.setTooltip({
+    title: item.displayName ?? item.type,
+    body: item.tooltip ?? "",
+  });
+};
+
+const onMouseLeave = () => {
+  store.clearTooltip();
+};
+
 const isSelected = computed(
   () => store.selectedSlotIndex === props.gridSlot.slot.slot
 );
@@ -31,7 +44,8 @@ watch(props.gridSlot, () => {
     class="fac-slot"
     :class="{ selected: isSelected }"
     @click="store.selectSlot(props.gridSlot.slot.slot)"
-    :title="gridSlot.slot.inventoryItem?.type ?? ''"
+    @mouseenter="onMouseEnter"
+    @mouseleave="onMouseLeave"
   >
     <!-- Item sprite -->
     <div

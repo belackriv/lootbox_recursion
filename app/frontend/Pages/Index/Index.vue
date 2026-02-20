@@ -34,7 +34,7 @@ const renderedActions = computed(() => availableActions.value ?? []);
       class="fac-panel"
       style="min-width: 220px; flex: 1 1 220px; max-width: 420px"
     >
-      <div class="fac-title-bar">⚡ Actions</div>
+      <div class="fac-title-bar">◈ Actions</div>
       <div style="padding: 8px">
         <ActionBar :actions="renderedActions" />
       </div>
@@ -42,7 +42,7 @@ const renderedActions = computed(() => availableActions.value ?? []);
 
     <!-- Inventory Panel -->
     <div class="fac-panel" style="flex: 0 0 auto">
-      <div class="fac-title-bar">🎒 Inventory</div>
+      <div class="fac-title-bar">▦ Inventory</div>
       <div style="padding: 8px">
         <InventoryGrid :inventory="inventory" />
       </div>

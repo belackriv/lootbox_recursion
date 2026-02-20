@@ -31,10 +31,16 @@ for (let row = 0; row < inventoryRowCount; row++) {
 
 const defaultActions: Array<PlayerAction> = [];
 
+export type TooltipContent = {
+  title: string;
+  body: string;
+};
+
 export const usePlayerStore = defineStore("player", () => {
   const inventory = ref({ rows: inventoryRows });
   const availableActions = ref(defaultActions);
   const selectedSlotIndex = ref<number | null>(null);
+  const hoveredTooltip = ref<TooltipContent | null>(null);
 
   const selectSlot = (slotNumber: number) => {
     selectedSlotIndex.value =
@@ -50,6 +56,14 @@ export const usePlayerStore = defineStore("player", () => {
       inventory.value.rows[rowIndex]?.[columnIndex]?.slot?.inventoryItem ?? null
     );
   });
+
+  const setTooltip = (content: TooltipContent) => {
+    hoveredTooltip.value = content;
+  };
+
+  const clearTooltip = () => {
+    hoveredTooltip.value = null;
+  };
 
   const updateAvailableActions = (
     updatedAvailableActions: Array<PlayerAction>
@@ -147,6 +161,9 @@ export const usePlayerStore = defineStore("player", () => {
             serverItem["_type"] ??
             null,
           count: serverItem.count ?? serverItem["count"] ?? 0,
+          displayName:
+            serverItem.displayName ?? serverItem["display_name"] ?? null,
+          tooltip: serverItem.tooltip ?? null,
         } as any;
 
         // If count is zero or null, clear the slot
@@ -189,6 +206,9 @@ export const usePlayerStore = defineStore("player", () => {
         gridSlot.slot.inventoryItem = {
           type: serverItem.type,
           count: serverItem.count,
+          displayName:
+            serverItem.displayName ?? serverItem["display_name"] ?? null,
+          tooltip: serverItem.tooltip ?? null,
         };
       } else {
         gridSlot.slot.inventoryItem = null;
@@ -212,8 +232,11 @@ export const usePlayerStore = defineStore("player", () => {
     inventory,
     availableActions,
     selectedSlotIndex,
+    hoveredTooltip,
     selectSlot,
     selectedSlotItem,
+    setTooltip,
+    clearTooltip,
     updateAvailableActions,
     updateInventory,
     mutateInventory,

@@ -23,13 +23,18 @@ class User < ApplicationRecord
 
   def get_player_actions
     if @player_actions.nil?
-      @player_actions = APP_DATA[:player_actions]
+      # Deep-copy the shared APP_DATA objects so per-user mutations (on_cooldown_until,
+      # disabled, etc.) never bleed across requests or users.
+      @player_actions = APP_DATA[:player_actions].map(&:dup)
     end
-    # load the user's player action state and update player_actions
+    # Load the user's player action state and update player_actions
+    # Iterate over whatever fields are stored and apply them.
     @player_actions.each do |action|
       player_action_state = PlayerActionState.where(user: self, player_action_name: action.name).first()
       if player_action_state
-        action.assign_attributes(player_action_state.action_state)
+        player_action_state.action_state.each do |key, value|
+          action.public_send(:"#{key}=", value) if action.respond_to?(:"#{key}=")
+        end
       end
     end
     # Recompute dynamic fields (disabled, revealed, choices) AFTER restoring
@@ -59,7 +64,7 @@ class User < ApplicationRecord
     if player_action_state.nil?
       player_action_state = PlayerActionState.new(user: self, player_action_name: player_action.name)
     end
-    player_action_state.action_state = player_action.attributes
+    player_action_state.action_state = player_action.attributes.slice(*PlayerAction::DYNAMIC_ACTION_ATTRIBUTES)
     player_action_state.save!
   end
 

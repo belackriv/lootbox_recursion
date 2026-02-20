@@ -62,12 +62,24 @@ const onClick = () => {
     performAction(null);
   }
 };
+
+const onMouseEnter = () => {
+  if (props.tooltip) {
+    store.setTooltip({ title: props.label, body: props.tooltip });
+  }
+};
+
+const onMouseLeave = () => {
+  store.clearTooltip();
+};
 </script>
 
 <template>
   <button
     :disabled="isDisabled"
     @click="onClick"
+    @mouseenter="onMouseEnter"
+    @mouseleave="onMouseLeave"
     class="fac-btn"
     :class="{ 'fac-btn--cooldown': onCooldown }"
     style="min-width: 80px"
