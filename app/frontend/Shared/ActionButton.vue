@@ -49,15 +49,10 @@ const performAction = (actionData: PlayerActionData | null) => {
 };
 
 const onClick = () => {
-  if (isDisabled.value) {
-    return false;
-  }
-  if (onCooldown.value || castTimeProgress.value > 0) {
-    return false;
-  }
+  if (isDisabled.value) return false;
+  if (onCooldown.value || castTimeProgress.value > 0) return false;
+
   if (props.name === "use") {
-    // Capture the selected slot at click time so it remains correct even if
-    // the player deselects during the cast time animation.
     const actionData =
       store.selectedSlotIndex !== null
         ? { slotNumber: store.selectedSlotIndex }
@@ -73,22 +68,14 @@ const onClick = () => {
   <button
     :disabled="isDisabled"
     @click="onClick"
-    class="bg-gray-400 hover:bg-gray-500 disabled:bg-gray-700 disabled:opacity-60 border-gray-300 border-2 rounded-lg underline p-1 pl-2 pr-2 m-1 disabled:cursor-not-allowed cursor-pointer relative"
+    class="fac-btn"
+    :class="{ 'fac-btn--cooldown': onCooldown }"
+    style="min-width: 80px"
   >
-    <span>{{ label }}</span>
-    <span
-      class="border-2 rounded-lg border-red-900 absolute"
-      :style="{
-        top: '-2.5%',
-        left: '-2.5%',
-        width: '105%',
-        height: '105%',
-        display: onCooldown ? 'block' : 'none',
-      }"
-    ></span>
-    <span
-      class="bg-gray-900 opacity-50 absolute top-0 left-0 h-full"
-      :style="{ width: castTimeProgress + '%' }"
-    ></span>
+    <!-- Label -->
+    <span style="position: relative; z-index: 1">{{ label }}</span>
+
+    <!-- Cast-time overlay (sweeps from left) -->
+    <span class="fac-castbar" :style="{ width: castTimeProgress + '%' }"></span>
   </button>
 </template>

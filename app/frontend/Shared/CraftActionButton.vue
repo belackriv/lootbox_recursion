@@ -65,22 +65,14 @@ const onClick = () => {
   <button
     :disabled="action?.disabled"
     @click="onClick"
-    class="bg-gray-400 hover:bg-gray-500 disabled:bg-gray-600 border-gray-300 border-2 rounded-lg underline p-1 pl-2 pr-2 m-1 cursor-pointer disabled:cursor-not-allowed relative"
+    class="fac-btn"
+    :class="{ 'fac-btn--cooldown': onCooldown }"
+    style="min-width: 96px; margin: 2px"
   >
-    <span>{{ choice.label }}</span>
-    <span
-      class="border-2 rounded-lg border-red-900 absolute"
-      :style="{
-        top: '-2.5%',
-        left: '-2.5%',
-        width: '105%',
-        height: '105%',
-        display: onCooldown ? 'block' : 'none',
-      }"
-    ></span>
-    <span
-      class="bg-gray-900 opacity-50 absolute top-0 left-0 h-full"
-      :style="{ width: castTimeProgress + '%' }"
-    ></span>
+    <!-- Label -->
+    <span style="position: relative; z-index: 1">{{ choice.label }}</span>
+
+    <!-- Cast-time overlay (sweeps from left) -->
+    <span class="fac-castbar" :style="{ width: castTimeProgress + '%' }"></span>
   </button>
 </template>

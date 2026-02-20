@@ -6,7 +6,7 @@ defineProps<{ slots: Array<InventoryGridSlot> }>();
 </script>
 
 <template>
-  <div class="border-s-slate-900 border-2 flex w-161 bg-slate-300">
+  <div style="display: flex; gap: 2px; margin-bottom: 2px">
     <InventoryItemSlot
       v-for="gridSlot in slots"
       :key="gridSlot.slot.slot"

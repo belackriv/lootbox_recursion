@@ -20,9 +20,11 @@ onMounted(() => {
 </script>
 
 <template>
-  <InventoryRow
-    v-for="(row, index) in store.inventory.rows"
-    :slots="row"
-    :key="index"
-  />
+  <div class="fac-panel-inner" style="display: inline-block; padding: 6px">
+    <InventoryRow
+      v-for="(row, index) in store.inventory.rows"
+      :slots="row"
+      :key="index"
+    />
+  </div>
 </template>

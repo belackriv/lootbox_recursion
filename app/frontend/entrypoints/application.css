@@ -1,4 +1,358 @@
-@import "tailwindcss";
+/* ─── Custom properties ─────────────────────────────────────────────────── */
 
-@plugin '@tailwindcss/typography';
-@plugin '@tailwindcss/forms';
+:root {
+  --color-fac-bg: #1b1a17;
+  --color-fac-panel: #2d2719;
+  --color-fac-panel-inner: #252015;
+  --color-fac-border: #5a4a30;
+  --color-fac-border-light: #8b7355;
+  --color-fac-border-dark: #0d0b08;
+  --color-fac-orange: #e8a020;
+  --color-fac-orange-light: #ffb234;
+  --color-fac-text: #d4c5a0;
+  --color-fac-text-dim: #8b7a5e;
+  --color-fac-text-dark: #4a3f2f;
+  --color-fac-btn: #4a3f2f;
+  --color-fac-btn-hover: #6b5a3e;
+  --color-fac-btn-disabled: #2a2218;
+  --color-fac-slot: #1a1410;
+  --color-fac-slot-border: #3d3322;
+  --color-fac-red: #c0392b;
+  --color-fac-green: #4caf50;
+}
+
+/* ─── Base ──────────────────────────────────────────────────────────────── */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  background-color: var(--color-fac-bg);
+  color: var(--color-fac-text);
+  font-family: "Trebuchet MS", "Arial Narrow", Arial, sans-serif;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+}
+
+/* ─── Layout utilities ──────────────────────────────────────────────────── */
+
+.flex {
+  display: flex;
+}
+.flex-col {
+  flex-direction: column;
+}
+.flex-wrap {
+  flex-wrap: wrap;
+}
+.flex-1 {
+  flex: 1;
+}
+.flex-none {
+  flex: none;
+}
+
+.items-center {
+  align-items: center;
+}
+.items-start {
+  align-items: flex-start;
+}
+.items-end {
+  align-items: flex-end;
+}
+
+.justify-center {
+  justify-content: center;
+}
+.justify-between {
+  justify-content: space-between;
+}
+.justify-end {
+  justify-content: flex-end;
+}
+
+.gap-1 {
+  gap: 4px;
+}
+.gap-2 {
+  gap: 8px;
+}
+.gap-3 {
+  gap: 12px;
+}
+
+/* ─── Sizing utilities ──────────────────────────────────────────────────── */
+
+.min-h-screen {
+  min-height: 100vh;
+}
+.min-h-full {
+  min-height: 100%;
+}
+.w-full {
+  width: 100%;
+}
+.h-full {
+  height: 100%;
+}
+
+/* ─── Spacing utilities ─────────────────────────────────────────────────── */
+
+.p-2 {
+  padding: 8px;
+}
+.p-4 {
+  padding: 16px;
+}
+.px-3 {
+  padding-left: 12px;
+  padding-right: 12px;
+}
+.py-1 {
+  padding-top: 4px;
+  padding-bottom: 4px;
+}
+.pb-2 {
+  padding-bottom: 8px;
+}
+
+.mx-2 {
+  margin-left: 8px;
+  margin-right: 8px;
+}
+.mt-2 {
+  margin-top: 8px;
+}
+.mb-0 {
+  margin-bottom: 0;
+}
+
+/* ─── Misc utilities ────────────────────────────────────────────────────── */
+
+.text-center {
+  text-align: center;
+}
+.overflow-y-auto {
+  overflow-y: auto;
+}
+.transition-opacity {
+  transition: opacity 0.2s ease;
+}
+
+/* Dialog-specific positioning */
+.fixed {
+  position: fixed;
+}
+.inset-0 {
+  inset: 0;
+}
+
+/* ─── Panel ─────────────────────────────────────────────────────────────── */
+
+.fac-panel {
+  background-color: var(--color-fac-panel);
+  border: 2px solid var(--color-fac-border);
+  box-shadow: inset 0 2px 0 var(--color-fac-border-light),
+    inset 0 -2px 0 var(--color-fac-border-dark),
+    inset 2px 0 0 var(--color-fac-border-light),
+    inset -2px 0 0 var(--color-fac-border-dark);
+}
+
+.fac-panel-inner {
+  background-color: var(--color-fac-panel-inner);
+  border: 2px solid var(--color-fac-border);
+  box-shadow: inset 0 2px 0 var(--color-fac-border-dark),
+    inset 0 -2px 0 var(--color-fac-border-light),
+    inset 2px 0 0 var(--color-fac-border-dark),
+    inset -2px 0 0 var(--color-fac-border-light);
+}
+
+/* ─── Panel title bar ───────────────────────────────────────────────────── */
+
+.fac-title-bar {
+  background: linear-gradient(180deg, #4a3f2f 0%, #332b1e 100%);
+  border-bottom: 2px solid var(--color-fac-border-dark);
+  color: var(--color-fac-orange);
+  font-weight: 700;
+  font-size: 0.8rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  user-select: none;
+}
+
+/* ─── Buttons ───────────────────────────────────────────────────────────── */
+
+.fac-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  background-color: var(--color-fac-btn);
+  color: var(--color-fac-text);
+  border: 2px solid var(--color-fac-border);
+  box-shadow: inset 0 2px 0 var(--color-fac-border-light),
+    inset 0 -2px 0 var(--color-fac-border-dark),
+    inset 2px 0 0 var(--color-fac-border-light),
+    inset -2px 0 0 var(--color-fac-border-dark);
+  padding: 4px 10px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.1s, color 0.1s;
+  min-width: 64px;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-decoration: none;
+  font-family: inherit;
+}
+
+.fac-btn:hover:not(:disabled) {
+  background-color: var(--color-fac-btn-hover);
+  color: var(--color-fac-orange-light);
+}
+
+.fac-btn:active:not(:disabled) {
+  box-shadow: inset 0 2px 0 var(--color-fac-border-dark),
+    inset 0 -2px 0 var(--color-fac-border-light),
+    inset 2px 0 0 var(--color-fac-border-dark),
+    inset -2px 0 0 var(--color-fac-border-light);
+  padding-top: 5px;
+  padding-bottom: 3px;
+}
+
+.fac-btn:disabled {
+  background-color: var(--color-fac-btn-disabled);
+  color: var(--color-fac-text-dim);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* ─── Inventory slot ────────────────────────────────────────────────────── */
+
+.fac-slot {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  background-color: var(--color-fac-slot);
+  border: 2px solid var(--color-fac-slot-border);
+  box-shadow: inset 0 2px 0 var(--color-fac-border-dark), inset 0 -1px 0 #3d3322,
+    inset 2px 0 0 var(--color-fac-border-dark), inset -1px 0 0 #3d3322;
+  position: relative;
+  cursor: pointer;
+  transition: border-color 0.1s;
+}
+
+.fac-slot:hover {
+  border-color: var(--color-fac-border-light);
+}
+
+.fac-slot.selected {
+  border-color: var(--color-fac-orange);
+  box-shadow: inset 0 2px 0 var(--color-fac-border-dark),
+    inset 0 -1px 0 var(--color-fac-orange),
+    inset 2px 0 0 var(--color-fac-border-dark),
+    inset -1px 0 0 var(--color-fac-orange), 0 0 6px 1px rgba(232, 160, 32, 0.4);
+}
+
+/* ─── Slot item icon placeholder ────────────────────────────────────────── */
+
+.fac-slot-icon {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 1.1rem;
+  font-weight: 900;
+  color: var(--color-fac-orange-light);
+  text-shadow: 0 1px 3px #000;
+  line-height: 1;
+}
+
+.fac-slot-count {
+  position: absolute;
+  bottom: 1px;
+  right: 2px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--color-fac-text);
+  text-shadow: 1px 1px 2px #000, -1px -1px 2px #000;
+  line-height: 1;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* ─── Cooldown state (box-shadow so overflow:hidden can't clip it) ──────── */
+
+.fac-btn--cooldown {
+  border-color: #6b2020;
+}
+
+/* ─── Cast-time overlay ─────────────────────────────────────────────────── */
+
+.fac-castbar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  z-index: 0;
+  background-color: rgba(0, 0, 0, 0.55);
+  pointer-events: none;
+}
+
+/* ─── Crafting tray ─────────────────────────────────────────────────────── */
+
+.fac-crafting-tray {
+  background-color: var(--color-fac-panel-inner);
+  border: 2px solid var(--color-fac-border);
+  box-shadow: inset 0 2px 0 var(--color-fac-border-dark),
+    inset 0 -2px 0 var(--color-fac-border-light),
+    inset 2px 0 0 var(--color-fac-border-dark),
+    inset -2px 0 0 var(--color-fac-border-light);
+  padding: 6px;
+  margin-top: 4px;
+}
+
+/* ─── Scrollbar ─────────────────────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-fac-panel-inner);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-fac-border);
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-fac-border-light);
+}
+
+/* ─── Slot flash animation ──────────────────────────────────────────────── */
+
+.fac-slot-flash {
+  position: absolute;
+  inset: 0;
+  background-color: rgba(232, 160, 32, 0.35);
+  pointer-events: none;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.5s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
