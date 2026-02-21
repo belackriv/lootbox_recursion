@@ -3,6 +3,7 @@ class SignUpsController < InertiaController
 
   def show
     render inertia: "Auth/SignUp", props: {
+      currentUser: nil,
       errors: {}
     }
   end

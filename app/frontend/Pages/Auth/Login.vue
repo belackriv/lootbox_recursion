@@ -16,7 +16,11 @@ const form = reactive({
 });
 
 function submit() {
-  router.post("/session", form);
+  router.post("/session", form, {
+    onSuccess: () => {
+      window.location.href = "/";
+    },
+  });
 }
 </script>
 

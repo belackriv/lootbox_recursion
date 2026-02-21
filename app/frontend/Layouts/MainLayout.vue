@@ -3,8 +3,12 @@ import NavLink from "@/Shared/NavLink.vue";
 import { storeToRefs } from "pinia";
 import { usePlayerStore } from "@/store/player.ts";
 
-const { loginPath = "", logoutPath = "" } = defineProps<{
-  currentUser: {
+const {
+  loginPath = "",
+  logoutPath = "",
+  currentUser = null,
+} = defineProps<{
+  currentUser?: {
     emailAddress: string;
   } | null;
   loginPath?: string;

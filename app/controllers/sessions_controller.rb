@@ -6,6 +6,7 @@ class SessionsController < InertiaController
 
   def new
     render inertia: "Auth/Login", props: {
+      currentUser: nil,
       errors: {}
     }
   end

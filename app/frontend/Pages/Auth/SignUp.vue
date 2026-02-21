@@ -15,7 +15,15 @@ const form = reactive({
 });
 
 function submit() {
-  router.post("/sign_up", { user: form });
+  router.post(
+    "/sign_up",
+    { user: form },
+    {
+      onSuccess: () => {
+        window.location.href = "/";
+      },
+    }
+  );
 }
 
 function firstError(

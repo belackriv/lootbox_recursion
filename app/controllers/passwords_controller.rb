@@ -7,6 +7,7 @@ class PasswordsController < InertiaController
 
   def new
     render inertia: "Auth/ForgotPassword", props: {
+      currentUser: nil,
       errors: {}
     }
   end
@@ -21,6 +22,7 @@ class PasswordsController < InertiaController
 
   def edit
     render inertia: "Auth/ResetPassword", props: {
+      currentUser: nil,
       token: params[:token],
       errors: {}
     }
