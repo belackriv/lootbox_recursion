@@ -5,7 +5,7 @@ class LootBoxTest < ActiveSupport::TestCase
 
   test "craft broadcasts inventory channel payload with envelope format" do
     user = User.create!(email_address: "envelope_test@example.com", password: "password")
-    entity = Entity.create!(user: user)
+    entity = user.entity
     entity.ensure_inventory_slots
 
     # Clear all slots for deterministic state
@@ -42,7 +42,7 @@ class LootBoxTest < ActiveSupport::TestCase
 
   test "craft creates loot box record and adds LootBoxInventoryItem and consumes materials" do
     user = User.create!(email_address: "test1@example.com", password: "password")
-    entity = Entity.create!(user: user)
+    entity = user.entity
 
     # Ensure the entity has inventory slots available
     entity.ensure_inventory_slots
@@ -89,7 +89,7 @@ class LootBoxTest < ActiveSupport::TestCase
 
   test "craft rolls back when no inventory slot is available" do
     user = User.create!(email_address: "test2@example.com", password: "password")
-    entity = Entity.create!(user: user)
+    entity = user.entity
 
     # Ensure slots exist
     entity.ensure_inventory_slots
@@ -147,7 +147,7 @@ class LootBoxTest < ActiveSupport::TestCase
 
   test "craft fails when materials are insufficient" do
     user = User.create!(email_address: "insufficient@example.com", password: "password")
-    entity = Entity.create!(user: user)
+    entity = user.entity
 
     entity.ensure_inventory_slots
     # Clear slots to deterministic state before setting up test items
@@ -193,7 +193,7 @@ class LootBoxTest < ActiveSupport::TestCase
 
   test "craft uses next available slot if first slot contains a full LootBoxInventoryItem" do
     user = User.create!(email_address: "nextslot@example.com", password: "password")
-    entity = Entity.create!(user: user)
+    entity = user.entity
 
     # Prepare clean inventory and materials
     entity.ensure_inventory_slots
@@ -276,7 +276,7 @@ class LootBoxTest < ActiveSupport::TestCase
 
   test "craft action becomes disabled after crafting when materials are insufficient" do
     user = User.create!(email_address: "action_state@example.com", password: "password")
-    entity = Entity.create!(user: user)
+    entity = user.entity
     entity.ensure_inventory_slots
 
     # Clear all slots for deterministic state
@@ -314,7 +314,7 @@ class LootBoxTest < ActiveSupport::TestCase
 
   test "scavenge triggers action state update via trigger_action_state_update" do
     user = User.create!(email_address: "scavenge_state@example.com", password: "password")
-    entity = Entity.create!(user: user)
+    entity = user.entity
     entity.ensure_inventory_slots
 
     # Clear all slots
@@ -347,7 +347,7 @@ class LootBoxTest < ActiveSupport::TestCase
   # and return [user, entity, loot_box].
   def create_user_with_crafted_loot_box(email:)
     user   = User.create!(email_address: email, password: "password")
-    entity = Entity.create!(user: user)
+    entity = user.entity
     entity.ensure_inventory_slots
 
     entity.inventory_slots.order(slot: :asc).each { |s| s.update!(inventory_item: nil) }
@@ -468,7 +468,7 @@ class LootBoxTest < ActiveSupport::TestCase
 
   test "open! returns no_inventory_item when LootBoxInventoryItem is missing" do
     user   = User.create!(email_address: "open_no_item@example.com", password: "password")
-    entity = Entity.create!(user: user)
+    entity = user.entity
     entity.ensure_inventory_slots
 
     # Create a loot box without a corresponding LootBoxInventoryItem in inventory
@@ -510,7 +510,7 @@ class LootBoxTest < ActiveSupport::TestCase
 
   test "open! base LootBoxModifier no-op apply does not change config" do
     user   = User.create!(email_address: "modifier_noop@example.com", password: "password")
-    entity = Entity.create!(user: user)
+    entity = user.entity
 
     loot_box = LootBox.create!(user: user, entity: entity)
 

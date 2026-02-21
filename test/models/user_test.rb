@@ -14,7 +14,7 @@ class UserTest < ActiveSupport::TestCase
   # [user, entity, loot_box] so open! tests start from a known good state.
   def create_user_with_loot_box(email:)
     user   = User.create!(email_address: email, password: "password")
-    entity = Entity.create!(user: user)
+    entity = user.entity
     entity.ensure_inventory_slots
 
     entity.inventory_slots.order(slot: :asc).each { |s| s.update!(inventory_item: nil) }
@@ -177,7 +177,7 @@ class UserTest < ActiveSupport::TestCase
 
   test "use returns no_loot_box when entity has no loot box in inventory" do
     user   = User.create!(email_address: "use_no_box@example.com", password: "password")
-    entity = Entity.create!(user: user)
+    entity = user.entity
     entity.ensure_inventory_slots
 
     result = user.use({ "slot_number" => 0 })
@@ -188,7 +188,7 @@ class UserTest < ActiveSupport::TestCase
 
   test "use returns no_loot_box when slot_number points to a non-loot-box item" do
     user   = User.create!(email_address: "use_wrong_slot@example.com", password: "password")
-    entity = Entity.create!(user: user)
+    entity = user.entity
     entity.ensure_inventory_slots
 
     wood = WoodInventoryItem.create!(entity: entity, count: 10)

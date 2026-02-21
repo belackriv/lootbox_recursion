@@ -3,7 +3,7 @@ require "test_helper"
 class EntityTest < ActiveSupport::TestCase
   test "sort_and_compress_inventory! compresses stacks and sorts by display name" do
     user = User.create!(email_address: "entity_sort_1@example.com", password: "password")
-    entity = Entity.create!(user: user)
+    entity = user.entity
     entity.ensure_inventory_slots
 
     slots = entity.inventory_slots.order(slot: :asc).to_a
@@ -59,7 +59,7 @@ class EntityTest < ActiveSupport::TestCase
 
   test "sort_and_compress_inventory! preserves total count per item type" do
     user = User.create!(email_address: "entity_sort_2@example.com", password: "password")
-    entity = Entity.create!(user: user)
+    entity = user.entity
     entity.ensure_inventory_slots
 
     slots = entity.inventory_slots.order(slot: :asc).to_a
@@ -94,7 +94,7 @@ class EntityTest < ActiveSupport::TestCase
 
   test "sort_and_compress_inventory! handles empty inventory" do
     user = User.create!(email_address: "entity_sort_3@example.com", password: "password")
-    entity = Entity.create!(user: user)
+    entity = user.entity
     entity.ensure_inventory_slots
 
     # Clear all slots to deterministic empty state
@@ -115,7 +115,7 @@ class EntityTest < ActiveSupport::TestCase
 
   test "inventory_sort_needed? returns false for empty inventory" do
     user = User.create!(email_address: "sort_needed_empty@example.com", password: "password")
-    entity = Entity.create!(user: user)
+    entity = user.entity
     entity.ensure_inventory_slots
 
     # Clear all slots to deterministic empty state
@@ -128,7 +128,7 @@ class EntityTest < ActiveSupport::TestCase
 
   test "inventory_sort_needed? returns false when already sorted and compressed" do
     user = User.create!(email_address: "sort_needed_sorted@example.com", password: "password")
-    entity = Entity.create!(user: user)
+    entity = user.entity
     entity.ensure_inventory_slots
 
     slots = entity.inventory_slots.order(slot: :asc).to_a
@@ -145,7 +145,7 @@ class EntityTest < ActiveSupport::TestCase
 
   test "inventory_sort_needed? returns true when types are unsorted" do
     user = User.create!(email_address: "sort_needed_unsorted@example.com", password: "password")
-    entity = Entity.create!(user: user)
+    entity = user.entity
     entity.ensure_inventory_slots
 
     slots = entity.inventory_slots.order(slot: :asc).to_a
@@ -160,7 +160,7 @@ class EntityTest < ActiveSupport::TestCase
 
   test "inventory_sort_needed? returns true when stacks are compressible" do
     user = User.create!(email_address: "sort_needed_compress@example.com", password: "password")
-    entity = Entity.create!(user: user)
+    entity = user.entity
     entity.ensure_inventory_slots
 
     slots = entity.inventory_slots.order(slot: :asc).to_a
@@ -177,7 +177,7 @@ class EntityTest < ActiveSupport::TestCase
 
   test "cleanup_orphaned_inventory_items! destroys items not referenced by any slot" do
     user = User.create!(email_address: "cleanup_orphan@example.com", password: "password")
-    entity = Entity.create!(user: user)
+    entity = user.entity
     entity.ensure_inventory_slots
 
     # Create an orphaned InventoryItem (belongs to entity but no slot points to it)
@@ -194,7 +194,7 @@ class EntityTest < ActiveSupport::TestCase
 
   test "cleanup_orphaned_inventory_items! does not destroy items that are referenced by a slot" do
     user = User.create!(email_address: "cleanup_safe@example.com", password: "password")
-    entity = Entity.create!(user: user)
+    entity = user.entity
     entity.ensure_inventory_slots
 
     slots = entity.inventory_slots.order(slot: :asc).to_a
@@ -211,7 +211,7 @@ class EntityTest < ActiveSupport::TestCase
 
   test "cleanup_orphaned_inventory_items! returns 0 when there are no orphans" do
     user = User.create!(email_address: "cleanup_none@example.com", password: "password")
-    entity = Entity.create!(user: user)
+    entity = user.entity
     entity.ensure_inventory_slots
 
     removed = entity.cleanup_orphaned_inventory_items!
@@ -221,11 +221,11 @@ class EntityTest < ActiveSupport::TestCase
 
   test "cleanup_orphaned_inventory_items! only affects its own entity" do
     user_a = User.create!(email_address: "cleanup_a@example.com", password: "password")
-    entity_a = Entity.create!(user: user_a)
+    entity_a = user_a.entity
     entity_a.ensure_inventory_slots
 
     user_b = User.create!(email_address: "cleanup_b@example.com", password: "password")
-    entity_b = Entity.create!(user: user_b)
+    entity_b = user_b.entity
     entity_b.ensure_inventory_slots
 
     # Create orphans on both entities
@@ -241,11 +241,11 @@ class EntityTest < ActiveSupport::TestCase
 
   test "cleanup_all_orphaned_inventory_items! cleans up across all entities" do
     user_a = User.create!(email_address: "cleanup_all_a@example.com", password: "password")
-    entity_a = Entity.create!(user: user_a)
+    entity_a = user_a.entity
     entity_a.ensure_inventory_slots
 
     user_b = User.create!(email_address: "cleanup_all_b@example.com", password: "password")
-    entity_b = Entity.create!(user: user_b)
+    entity_b = user_b.entity
     entity_b.ensure_inventory_slots
 
     orphan_a = WoodInventoryItem.create!(entity: entity_a, count: 5)

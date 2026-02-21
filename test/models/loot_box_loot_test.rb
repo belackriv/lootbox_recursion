@@ -7,7 +7,7 @@ class LootBoxLootTest < ActiveSupport::TestCase
 
   def build_loot_box(user: nil, entity: nil)
     user   ||= User.create!(email_address: "lbl_#{SecureRandom.hex(4)}@example.com", password: "password")
-    entity ||= Entity.create!(user: user)
+    entity ||= user.entity
     LootBox.create!(user: user, entity: entity)
   end
 
@@ -156,7 +156,7 @@ class LootBoxLootTest < ActiveSupport::TestCase
 
   test "destroying the corresponding InventoryItem does not affect the LootBoxLoot record" do
     user   = User.create!(email_address: "lbl_destroy_#{SecureRandom.hex(4)}@example.com", password: "password")
-    entity = Entity.create!(user: user)
+    entity = user.entity
     entity.ensure_inventory_slots
 
     # Create a real inventory item and a loot record that snapshots it

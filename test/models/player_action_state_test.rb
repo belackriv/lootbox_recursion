@@ -3,7 +3,7 @@ require "test_helper"
 class PlayerActionStateTest < ActiveSupport::TestCase
   test "available actions include sort_inventory with label Sort" do
     user = User.create!(email_address: "sort_action_1@example.com", password: "password")
-    entity = Entity.create!(user: user)
+    entity = user.entity
     entity.ensure_inventory_slots
 
     available = user.get_available_actions
@@ -15,7 +15,7 @@ class PlayerActionStateTest < ActiveSupport::TestCase
 
   test "sort_inventory is disabled when inventory is empty" do
     user = User.create!(email_address: "sort_action_2@example.com", password: "password")
-    entity = Entity.create!(user: user)
+    entity = user.entity
     entity.ensure_inventory_slots
 
     # Clear all slots
@@ -31,7 +31,7 @@ class PlayerActionStateTest < ActiveSupport::TestCase
 
   test "sort_inventory is disabled when inventory is already organized" do
     user = User.create!(email_address: "sort_action_3@example.com", password: "password")
-    entity = Entity.create!(user: user)
+    entity = user.entity
     entity.ensure_inventory_slots
 
     # Clear all slots
@@ -50,7 +50,7 @@ class PlayerActionStateTest < ActiveSupport::TestCase
 
   test "sort_inventory is enabled when inventory needs organization" do
     user = User.create!(email_address: "sort_action_4@example.com", password: "password")
-    entity = Entity.create!(user: user)
+    entity = user.entity
     entity.ensure_inventory_slots
 
     # Clear all slots
@@ -69,7 +69,7 @@ class PlayerActionStateTest < ActiveSupport::TestCase
 
   test "sort_inventory is disabled during cooldown after performing sort" do
     user = User.create!(email_address: "sort_action_5@example.com", password: "password")
-    entity = Entity.create!(user: user)
+    entity = user.entity
     entity.ensure_inventory_slots
 
     # Clear all slots
@@ -94,7 +94,7 @@ class PlayerActionStateTest < ActiveSupport::TestCase
 
   test "sort_inventory cooldown is approximately 1 second in the future" do
     user = User.create!(email_address: "sort_action_6@example.com", password: "password")
-    entity = Entity.create!(user: user)
+    entity = user.entity
     entity.ensure_inventory_slots
 
     # Clear all slots

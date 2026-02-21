@@ -5,7 +5,7 @@ class InventoryItemTest < ActiveSupport::TestCase
 
   test "scavenge_item broadcasts inventory channel payload with envelope format" do
     user = User.create!(email_address: "scavenge_envelope@example.com", password: "password")
-    entity = Entity.create!(user: user)
+    entity = user.entity
     entity.ensure_inventory_slots
 
     # Clear all slots for deterministic state
