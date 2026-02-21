@@ -1,8 +1,10 @@
-class SignUpsController < ApplicationController
+class SignUpsController < InertiaController
   allow_unauthenticated_access
 
   def show
-    @user = User.new
+    render inertia: "Auth/SignUp", props: {
+      errors: {}
+    }
   end
 
   def create
@@ -11,7 +13,7 @@ class SignUpsController < ApplicationController
       start_new_session_for(@user)
       redirect_to root_path
     else
-      render :show, status: :unprocessable_entity
+      redirect_to sign_up_path, inertia: { errors: @user.errors.messages }
     end
   end
 

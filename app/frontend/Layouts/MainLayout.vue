@@ -71,8 +71,9 @@ const { hoveredTooltip } = storeToRefs(store);
         <slot />
       </main>
 
-      <!-- Right sidebar: tooltip panel -->
+      <!-- Right sidebar: tooltip panel (only shown when logged in) -->
       <aside
+        v-if="currentUser"
         style="
           width: 180px;
           flex: none;
@@ -132,8 +133,12 @@ const { hoveredTooltip } = storeToRefs(store);
 
     <!-- Footer -->
     <footer
-      class="text-center pb-2"
+      class="text-center"
       style="
+        height: 2vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
         font-size: 0.65rem;
         color: var(--color-fac-text-dim);
         letter-spacing: 0.06em;

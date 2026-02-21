@@ -1,9 +1,14 @@
-class PasswordsController < ApplicationController
+class PasswordsController < InertiaController
   allow_unauthenticated_access
   before_action :set_user_by_token, only: %i[ edit update ]
-  rate_limit to: 10, within: 3.minutes, only: :create, with: -> { redirect_to new_password_path, alert: "Try again later." }
+  rate_limit to: 10, within: 3.minutes, only: :create, with: -> {
+    redirect_to new_password_path, inertia: { errors: { base: "Too many attempts. Try again later." } }
+  }
 
   def new
+    render inertia: "Auth/ForgotPassword", props: {
+      errors: {}
+    }
   end
 
   def create
@@ -15,6 +20,10 @@ class PasswordsController < ApplicationController
   end
 
   def edit
+    render inertia: "Auth/ResetPassword", props: {
+      token: params[:token],
+      errors: {}
+    }
   end
 
   def update
@@ -22,7 +31,7 @@ class PasswordsController < ApplicationController
       @user.sessions.destroy_all
       redirect_to new_session_path, notice: "Password has been reset."
     else
-      redirect_to edit_password_path(params[:token]), alert: "Passwords did not match."
+      redirect_to edit_password_path(params[:token]), inertia: { errors: { base: "Passwords did not match." } }
     end
   end
 
@@ -30,6 +39,6 @@ class PasswordsController < ApplicationController
     def set_user_by_token
       @user = User.find_by_password_reset_token!(params[:token])
     rescue ActiveSupport::MessageVerifier::InvalidSignature
-      redirect_to new_password_path, alert: "Password reset link is invalid or has expired."
+      redirect_to new_password_path, inertia: { errors: { base: "Password reset link is invalid or has expired." } }
     end
 end
