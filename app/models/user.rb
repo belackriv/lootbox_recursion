@@ -1,11 +1,13 @@
 class User < ApplicationRecord
   has_secure_password
   has_many :sessions, dependent: :destroy
-  has_many :inventory_items, dependent: :destroy
+
   has_many :loot_boxes, dependent: :destroy
   has_many :player_action_states, dependent: :destroy
-  has_one :entity
+  has_one :entity, dependent: :destroy
   delegate :inventory_items, to: :entity
+
+  after_create :provision_entity!
 
   normalizes :email_address, with: ->(e) { e.strip.downcase }
 
@@ -171,6 +173,11 @@ class User < ApplicationRecord
 
   def remove_inventory(class_name, count)
     entity.remove_inventory(class_name, count)
+  end
+
+  def provision_entity!
+    e = Entity.create!(user: self)
+    e.ensure_inventory_slots
   end
 
   def add_inventory(class_name, count)

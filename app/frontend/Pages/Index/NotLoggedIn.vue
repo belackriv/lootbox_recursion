@@ -56,7 +56,7 @@
 
         <!-- Login link -->
         <a
-          href="/users/sign_in"
+          href="/session/new"
           class="fac-btn"
           style="
             display: inline-flex;

@@ -323,6 +323,79 @@ body {
   margin-top: 4px;
 }
 
+/* ─── Auth page layout ──────────────────────────────────────────────────── */
+
+.fac-auth-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background-color: var(--color-fac-bg);
+}
+
+/* ─── Form inputs ───────────────────────────────────────────────────────── */
+
+.fac-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-fac-text-dim);
+  margin-bottom: 4px;
+}
+
+.fac-input {
+  display: block;
+  width: 100%;
+  background-color: var(--color-fac-panel-inner);
+  border: 2px solid var(--color-fac-border);
+  box-shadow: inset 0 2px 0 var(--color-fac-border-dark),
+    inset 0 -1px 0 var(--color-fac-border-light);
+  color: var(--color-fac-text);
+  padding: 6px 10px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border-color 0.15s;
+}
+
+.fac-input:focus {
+  border-color: var(--color-fac-orange);
+  box-shadow: inset 0 2px 0 var(--color-fac-border-dark),
+    inset 0 -1px 0 var(--color-fac-border-light),
+    0 0 0 1px rgba(232, 160, 32, 0.25);
+}
+
+.fac-input::placeholder {
+  color: var(--color-fac-text-dark);
+  font-style: italic;
+}
+
+/* ─── Flash messages ────────────────────────────────────────────────────── */
+
+.fac-flash-alert {
+  background-color: rgba(192, 57, 43, 0.15);
+  border: 1px solid var(--color-fac-red);
+  color: #e57373;
+  font-size: 0.78rem;
+  padding: 6px 10px;
+  margin-bottom: 14px;
+  letter-spacing: 0.03em;
+}
+
+.fac-flash-notice {
+  background-color: rgba(76, 175, 80, 0.12);
+  border: 1px solid var(--color-fac-green);
+  color: #81c784;
+  font-size: 0.78rem;
+  padding: 6px 10px;
+  margin-bottom: 14px;
+  letter-spacing: 0.03em;
+}
+
 /* ─── Scrollbar ─────────────────────────────────────────────────────────── */
 
 ::-webkit-scrollbar {
