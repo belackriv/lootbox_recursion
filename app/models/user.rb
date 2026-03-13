@@ -3,8 +3,11 @@ class User < ApplicationRecord
   has_many :sessions, dependent: :destroy
 
   has_many :loot_boxes, dependent: :destroy
+
   has_many :player_action_states, dependent: :destroy
   has_one :entity, dependent: :destroy
+  has_many :irradiation_enclosures, -> { where(type: "IrradiationEnclosure") },
+           through: :entity, source: :owned_entities
   delegate :inventory_items, to: :entity
 
   after_create :provision_entity!
@@ -103,8 +106,15 @@ class User < ApplicationRecord
   end
 
   def get_craft_choices
-    craft_choices = [ { class_name: "LootBox", label: "Lootbox" } ]
+    craft_choices = [
+      { class_name: "LootBox", label: "Lootbox" },
+      { class_name: "IrradiationEnclosure", label: "Irradiation Enclosure" }
+    ]
     craft_choices
+  end
+
+  def craft_irradiation_enclosure(action_data)
+    IrradiationEnclosure.craft(self, action_data)
   end
 
   def use(action_data)

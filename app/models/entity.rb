@@ -1,8 +1,116 @@
 class Entity < ApplicationRecord
-  # at some point we will add more types of entities
-  # use  add_check_constraint :entity, "num_nonnulls(user_id, ...) = 1", name: "entity_only_one_foreign_key"
-  # add , optional: true to line below when this is applied
-  belongs_to :user
+  # Shared craft skeleton used by all craftable classes (LootBox, IrradiationEnclosure, etc.).
+  #
+  # Handles the full transaction + rescue/ensure wrapper:
+  #   - ensures inventory slots exist
+  #   - finds an available slot for `inventory_item_type`
+  #   - checks and removes all costs specified in the ItemCraftingCost
+  #   - applies the inventory item mutation
+  #   - links the created record back to the inventory item via `inventory_item_assoc`
+  #   - broadcasts mutations and triggers action state update
+  #
+  # The caller supplies a block that creates and returns the crafted record:
+  #   Entity.craft_item(...) { |player_entity| MyRecord.create!(owner: player_entity) }
+  #
+  # @param cost [ItemCraftingCost] encapsulates all material costs for the craft
+  # @return [Hash] { success: Boolean, mutations: Array, reason: String|nil }
+  def self.craft_item(user, cost:, inventory_item_type:, inventory_item_assoc:)
+    mutations = []
+    success   = false
+    reason    = nil
+
+    begin
+      ActiveRecord::Base.transaction do
+        player_entity = user.entity
+        player_entity.ensure_inventory_slots
+
+        # Find the first available slot — empty preferred, otherwise a partial stack of the same type
+        item_class = Object.const_get(inventory_item_type)
+        slot = player_entity.inventory_slots.order(slot: :asc).detect do |s|
+          if s.inventory_item.nil?
+            true
+          elsif s.inventory_item.class.name == inventory_item_type &&
+                s.inventory_item.count < item_class::STACK_SIZE
+            true
+          else
+            false
+          end
+        end
+
+        if slot.nil?
+          reason = "no_slot"
+          raise ActiveRecord::Rollback
+        end
+
+        # Check all material costs are satisfied before any destructive changes
+        sufficient = cost.to_h.all? do |item_type, required|
+          player_entity.inventory_slots
+            .joins(:inventory_item)
+            .where(inventory_item: { type: item_type })
+            .sum("inventory_item.count") >= required
+        end
+
+        unless sufficient
+          reason = "insufficient_materials"
+          raise ActiveRecord::Rollback
+        end
+
+        # Remove materials — these apply immediately inside the transaction
+        cost.to_h.each do |item_type, required|
+          next if required == 0
+          removed = user.remove_inventory(item_type, required)
+          if removed.empty?
+            reason = "insufficient_materials"
+            raise ActiveRecord::Rollback
+          end
+          mutations.concat(removed)
+        end
+
+        # Delegate record creation to the caller's block
+        crafted_record = yield(player_entity)
+
+        # Add the inventory item to the found slot
+        mutation = InventoryItemMutation.new(
+          item_type:      inventory_item_type,
+          inventory_slot: slot,
+          delta:          1
+        )
+        mutation.apply!
+
+        # Link the inventory item back to the crafted record
+        slot.reload
+        item = slot.inventory_item
+        if item && item.respond_to?(:"#{inventory_item_assoc}=")
+          item.public_send(:"#{inventory_item_assoc}=", crafted_record)
+          item.save!
+        end
+
+        mutations << mutation
+        success = true
+      end
+    rescue => e
+      Rails.logger.error(
+        "#{name}.craft failed for user=#{user&.id}: #{e.class} - #{e.message}\n#{e.backtrace.join("\n")}"
+      )
+      mutations = []
+      reason    = "exception" if reason.nil?
+    ensure
+      mutations_payload = mutations.map { |m| m.to_jbuilder.attributes! }
+      PlayerInventoryChannel.broadcast_to(user, { action: "inventory_mutations", data: mutations_payload })
+      user.trigger_action_state_update
+    end
+
+    result = { success: success, mutations: mutations, reason: reason }
+    Rails.logger.info("#{name}.craft result for user=#{user&.id}: #{result.inspect}")
+    result
+  end
+
+  # STI: subclasses (PlaceableEntity → IrradiationEnclosure, etc.) set `type`.
+  # Exactly one of user_id or owner_id must be non-null (enforced by DB check constraint
+  # "entity_exactly_one_owner": num_nonnulls(user_id, owner_id) = 1).
+  belongs_to :user, optional: true
+  belongs_to :owner, class_name: "Entity", optional: true
+  has_many :owned_entities, class_name: "Entity", foreign_key: :owner_id, dependent: :destroy
   has_many :inventory_slots, dependent: :destroy
   has_many :inventory_items, dependent: :destroy
 
@@ -227,6 +335,8 @@ class Entity < ApplicationRecord
   def trigger_action_state_update
     if user
       user.trigger_action_state_update
+    elsif owner
+      owner.trigger_action_state_update
     end
   end
 end

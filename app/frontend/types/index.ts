@@ -1,4 +1,6 @@
 export const LOOTBOX_ITEM_TYPE = "LootBoxInventoryItem";
+export const IRRADIATION_ENCLOSURE_ITEM_TYPE =
+  "IrradiationEnclosureInventoryItem";
 
 export type Flash = {
   notice?: string;

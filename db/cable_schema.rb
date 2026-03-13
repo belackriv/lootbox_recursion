@@ -10,15 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_02_19_222031) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_13_141312) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
   create_table "entities", force: :cascade do |t|
     t.datetime "created_at", null: false
+    t.bigint "owner_id"
+    t.string "type"
     t.datetime "updated_at", null: false
-    t.bigint "user_id", null: false
+    t.bigint "user_id"
+    t.index ["owner_id"], name: "index_entities_on_owner_id"
     t.index ["user_id"], name: "index_entities_on_user_id", unique: true
+    t.check_constraint "num_nonnulls(user_id, owner_id) = 1", name: "entity_exactly_one_owner"
   end
 
   create_table "inventory_item_mutations", force: :cascade do |t|
@@ -35,10 +39,12 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_19_222031) do
     t.integer "count"
     t.datetime "created_at", null: false
     t.bigint "entity_id", null: false
+    t.bigint "irradiation_enclosure_id"
     t.bigint "loot_box_id"
     t.string "type"
     t.datetime "updated_at", null: false
     t.index ["entity_id"], name: "index_inventory_items_on_entity_id"
+    t.index ["irradiation_enclosure_id"], name: "index_inventory_items_on_irradiation_enclosure_id"
     t.index ["loot_box_id"], name: "index_inventory_items_on_loot_box_id"
   end
 
@@ -110,6 +116,17 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_19_222031) do
     t.index ["channel"], name: "index_solid_cable_messages_on_channel"
     t.index ["channel_hash"], name: "index_solid_cable_messages_on_channel_hash"
     t.index ["created_at"], name: "index_solid_cable_messages_on_created_at"
+  end
+
+  create_table "solid_cache_entries", force: :cascade do |t|
+    t.integer "byte_size", null: false
+    t.datetime "created_at", null: false
+    t.binary "key", null: false
+    t.bigint "key_hash", null: false
+    t.binary "value", null: false
+    t.index ["byte_size"], name: "index_solid_cache_entries_on_byte_size"
+    t.index ["key_hash", "byte_size"], name: "index_solid_cache_entries_on_key_hash_and_byte_size"
+    t.index ["key_hash"], name: "index_solid_cache_entries_on_key_hash", unique: true
   end
 
   create_table "solid_queue_blocked_executions", force: :cascade do |t|
@@ -241,9 +258,11 @@ ActiveRecord::Schema[8.1].define(version: 2026_02_19_222031) do
     t.index ["email_address"], name: "index_users_on_email_address", unique: true
   end
 
+  add_foreign_key "entities", "entities", column: "owner_id"
   add_foreign_key "entities", "users"
   add_foreign_key "inventory_item_mutations", "inventory_slots"
   add_foreign_key "inventory_items", "entities"
+  add_foreign_key "inventory_items", "entities", column: "irradiation_enclosure_id"
   add_foreign_key "inventory_items", "loot_boxes"
   add_foreign_key "inventory_slots", "entities"
   add_foreign_key "inventory_slots", "inventory_items"
