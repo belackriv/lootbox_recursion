@@ -318,9 +318,9 @@ class IrradiationEnclosureTest < ActiveSupport::TestCase
     slots.each_with_index do |slot, i|
       item = if i < (slots.length / 2)
                WoodInventoryItem.create!(entity: entity, count: 100)
-             else
+      else
                IronInventoryItem.create!(entity: entity, count: 100)
-             end
+      end
       slot.inventory_item = item
       slot.save!
     end
@@ -341,9 +341,9 @@ class IrradiationEnclosureTest < ActiveSupport::TestCase
     slots.each_with_index do |slot, i|
       item = if i < (slots.length / 2)
                WoodInventoryItem.create!(entity: entity, count: 100)
-             else
+      else
                IronInventoryItem.create!(entity: entity, count: 100)
-             end
+      end
       slot.inventory_item = item
       slot.save!
     end
@@ -362,9 +362,9 @@ class IrradiationEnclosureTest < ActiveSupport::TestCase
     slots.each_with_index do |slot, i|
       item = if i < (slots.length / 2)
                WoodInventoryItem.create!(entity: entity, count: 100)
-             else
+      else
                IronInventoryItem.create!(entity: entity, count: 100)
-             end
+      end
       slot.inventory_item = item
       slot.save!
     end
@@ -378,77 +378,7 @@ class IrradiationEnclosureTest < ActiveSupport::TestCase
     assert_equal iron_before, entity.inventory_items.where(type: "IronInventoryItem").sum(:count)
   end
 
-  # ---------------------------------------------------------------------------
-  # craft — action state side-effects
-  # ---------------------------------------------------------------------------
 
-  test "craft_irradiation_enclosure action is visible and disabled before having enough materials" do
-    user = create_user("ie_action_disabled@example.com")
-    clear_slots(user.entity)
-
-    place_item(user.entity, WoodInventoryItem, 50, 0)
-    place_item(user.entity, IronInventoryItem, 50, 1)
-
-    user.update_player_actions
-    action = user.get_available_actions.find { |a| a.name == "craft_irradiation_enclosure" }
-
-    assert_not_nil action, "craft_irradiation_enclosure action should be revealed"
-    assert action.disabled, "Action should be disabled when materials are below 100"
-  end
-
-  test "craft_irradiation_enclosure action is enabled when materials exceed 100" do
-    user = create_user("ie_action_enabled@example.com")
-    clear_slots(user.entity)
-
-    # Requirements use "gt" so need strictly > 100
-    place_item(user.entity, WoodInventoryItem, 101, 0)
-    place_item(user.entity, IronInventoryItem, 101, 1)
-
-    user.update_player_actions
-    action = user.get_available_actions.find { |a| a.name == "craft_irradiation_enclosure" }
-
-    assert_not_nil action
-    assert_not action.disabled, "Action should be enabled when both materials exceed 100"
-  end
-
-  test "craft_irradiation_enclosure action becomes disabled after craft consumes materials" do
-    user   = create_user("ie_action_post_craft@example.com")
-    entity = user.entity
-    clear_slots(entity)
-
-    # 101 of each: gt 100 passes before craft, only 1 remains after → disabled again
-    place_item(entity, WoodInventoryItem, 101, 0)
-    place_item(entity, IronInventoryItem, 101, 1)
-
-    user.update_player_actions
-    before_action = user.get_available_actions.find { |a| a.name == "craft_irradiation_enclosure" }
-    assert_not before_action.disabled, "Action should be enabled before crafting"
-
-    IrradiationEnclosure.craft(user, {})
-
-    user.instance_variable_set(:@player_actions, nil)
-    user.update_player_actions
-    after_action = user.get_available_actions.find { |a| a.name == "craft_irradiation_enclosure" }
-    assert after_action.disabled, "Action should be disabled when only 1 of each material remains"
-  end
-
-  # ---------------------------------------------------------------------------
-  # User#craft_irradiation_enclosure delegation
-  # ---------------------------------------------------------------------------
-
-  test "User#craft_irradiation_enclosure delegates to IrradiationEnclosure.craft and succeeds" do
-    user   = create_user("ie_delegation@example.com")
-    entity = user.entity
-    clear_slots(entity)
-
-    place_item(entity, WoodInventoryItem, 100, 0)
-    place_item(entity, IronInventoryItem, 100, 1)
-
-    result = user.craft_irradiation_enclosure({})
-
-    assert result[:success], "User#craft_irradiation_enclosure should delegate and succeed"
-    assert Entity.where(type: "IrradiationEnclosure", owner_id: entity.id).exists?
-  end
 
   test "User#irradiation_enclosures association returns the user's crafted enclosures" do
     user   = create_user("ie_assoc@example.com")

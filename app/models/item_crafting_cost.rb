@@ -31,6 +31,14 @@ class ItemCraftingCost
     }
   end
 
+  # Serialises the cost for the frontend as { wood: n, iron: n }.
+  def to_jbuilder
+    Jbuilder.new do |jbuilder|
+      jbuilder.wood @wood
+      jbuilder.iron @iron
+    end
+  end
+
   def ==(other)
     other.is_a?(ItemCraftingCost) && wood == other.wood && iron == other.iron
   end

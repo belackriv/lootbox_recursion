@@ -106,15 +106,14 @@ class User < ApplicationRecord
   end
 
   def get_craft_choices
-    craft_choices = [
+    [
       { class_name: "LootBox", label: "Lootbox" },
       { class_name: "IrradiationEnclosure", label: "Irradiation Enclosure" }
-    ]
-    craft_choices
-  end
-
-  def craft_irradiation_enclosure(action_data)
-    IrradiationEnclosure.craft(self, action_data)
+    ].map do |choice|
+      klass = Object.const_get(choice[:class_name])
+      cost = klass.const_defined?(:CRAFTING_COST) ? klass::CRAFTING_COST.to_jbuilder.attributes! : nil
+      choice.merge(cost: cost)
+    end
   end
 
   def use(action_data)

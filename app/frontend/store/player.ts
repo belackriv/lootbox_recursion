@@ -7,6 +7,7 @@ import {
   InventoryMutation,
   InventorySlot,
   InventoryGridSlot,
+  CraftingCost,
 } from "../types/index.ts";
 import PlayerActionsChannel from "@/channels/playerActions.ts";
 
@@ -31,9 +32,16 @@ for (let row = 0; row < inventoryRowCount; row++) {
 
 const defaultActions: Array<PlayerAction> = [];
 
+export type TooltipCostRow = {
+  label: string;
+  amount: number;
+  canAfford: boolean;
+};
+
 export type TooltipContent = {
   title: string;
   body: string;
+  costs?: Array<TooltipCostRow>;
 };
 
 export const usePlayerStore = defineStore("player", () => {
@@ -41,6 +49,29 @@ export const usePlayerStore = defineStore("player", () => {
   const availableActions = ref(defaultActions);
   const selectedSlotIndex = ref<number | null>(null);
   const hoveredTooltip = ref<TooltipContent | null>(null);
+
+  // Reactive map of item type → total count across all inventory slots.
+  const inventoryTotals = computed<Record<string, number>>(() => {
+    const totals: Record<string, number> = {};
+    for (const row of inventory.value.rows) {
+      for (const gridSlot of row) {
+        const item = gridSlot.slot.inventoryItem;
+        if (item?.type && item.count > 0) {
+          totals[item.type] = (totals[item.type] ?? 0) + item.count;
+        }
+      }
+    }
+    return totals;
+  });
+
+  // Returns true when the player has enough of every material in the given cost.
+  const canAfford = (cost: CraftingCost | null | undefined): boolean => {
+    if (!cost) return true;
+    return (
+      (inventoryTotals.value["WoodInventoryItem"] ?? 0) >= cost.wood &&
+      (inventoryTotals.value["IronInventoryItem"] ?? 0) >= cost.iron
+    );
+  };
 
   const selectSlot = (slotNumber: number) => {
     selectedSlotIndex.value =
@@ -235,6 +266,8 @@ export const usePlayerStore = defineStore("player", () => {
     hoveredTooltip,
     selectSlot,
     selectedSlotItem,
+    inventoryTotals,
+    canAfford,
     setTooltip,
     clearTooltip,
     updateAvailableActions,

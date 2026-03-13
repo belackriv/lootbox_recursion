@@ -4,8 +4,9 @@ import type {
   PlayerActionChoice,
   PlayerActionData,
 } from "@/types/index.ts";
-import { inject, ref } from "vue";
+import { inject, ref, computed } from "vue";
 import { usePlayerStore } from "@/store/player.ts";
+import type { TooltipCostRow } from "@/store/player.ts";
 import PlayerActionsChannel from "@/channels/playerActions.ts";
 
 const props = defineProps<{
@@ -19,11 +20,48 @@ const playerActionsChannel = inject<PlayerActionsChannel>(
 const castTimeProgress = ref<number>(0);
 const onCooldown = ref<boolean>(false);
 
+const store = usePlayerStore();
+
+const tooltipCosts = computed<Array<TooltipCostRow>>(() => {
+  if (!props.choice.cost) return [];
+  const wood = props.choice.cost.wood;
+  const iron = props.choice.cost.iron;
+  return [
+    {
+      label: "Wood",
+      amount: wood,
+      canAfford: (store.inventoryTotals["WoodInventoryItem"] ?? 0) >= wood,
+    },
+    {
+      label: "Iron",
+      amount: iron,
+      canAfford: (store.inventoryTotals["IronInventoryItem"] ?? 0) >= iron,
+    },
+  ];
+});
+
+const onMouseEnter = () => {
+  store.setTooltip({
+    title: props.choice.label,
+    body: "",
+    costs: tooltipCosts.value,
+  });
+};
+
+const onMouseLeave = () => {
+  store.clearTooltip();
+};
+
+const isDisabled = computed(() => {
+  if (onCooldown.value || castTimeProgress.value > 0) return true;
+  if (props.action?.disabled) return true;
+  return !store.canAfford(props.choice.cost);
+});
+
 const performAction = (actionData: PlayerActionData | null) => {
   if (!props.action) {
     return false;
   }
-  const store = usePlayerStore();
   store.performPlayerAction(
     { ...props.action },
     actionData,
@@ -54,17 +92,19 @@ const performAction = (actionData: PlayerActionData | null) => {
 };
 
 const onClick = () => {
-  if (onCooldown.value || castTimeProgress.value > 0) {
+  if (isDisabled.value) {
     return false;
   }
-  performAction(props.choice);
+  performAction(props.choice as PlayerActionData);
 };
 </script>
 
 <template>
   <button
-    :disabled="action?.disabled"
+    :disabled="isDisabled"
     @click="onClick"
+    @mouseenter="onMouseEnter"
+    @mouseleave="onMouseLeave"
     class="fac-btn"
     :class="{ 'fac-btn--cooldown': onCooldown }"
     style="min-width: 96px; margin: 2px"

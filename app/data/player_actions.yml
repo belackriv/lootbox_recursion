@@ -31,26 +31,6 @@ player_actions:
         value: 50
     reveal_requirements: []
 
-  - name: "craft_irradiation_enclosure"
-    label: "Craft Enclosure"
-    tooltip: "Craft an Irradiation Enclosure. Requires 100 wood and 100 iron."
-    disabled: true
-    revealed: true
-    cooldown: 5
-    on_cooldown_until: null
-    cast_time: 5
-    choices: []
-    requirements:
-      - check: "inventory_items"
-        for_item_type: "WoodInventoryItem"
-        condition: "gt"
-        value: 100
-      - check: "inventory_items"
-        for_item_type: "IronInventoryItem"
-        condition: "gt"
-        value: 100
-    reveal_requirements: []
-
   - name: "use"
     label: "Use"
     tooltip: "Use the selected item. Select a loot box from your inventory to open it."

@@ -110,6 +110,7 @@ const { hoveredTooltip } = storeToRefs(store);
                   {{ hoveredTooltip.title }}
                 </div>
                 <div
+                  v-if="hoveredTooltip.body"
                   style="
                     font-size: 0.76rem;
                     line-height: 1.5;
@@ -117,6 +118,49 @@ const { hoveredTooltip } = storeToRefs(store);
                   "
                 >
                   {{ hoveredTooltip.body }}
+                </div>
+                <div
+                  v-if="hoveredTooltip.costs && hoveredTooltip.costs.length > 0"
+                  style="margin-top: 6px"
+                >
+                  <div
+                    style="
+                      font-size: 0.7rem;
+                      font-weight: 700;
+                      letter-spacing: 0.06em;
+                      text-transform: uppercase;
+                      color: var(--color-fac-text-dim);
+                      margin-bottom: 4px;
+                    "
+                  >
+                    Cost
+                  </div>
+                  <div
+                    v-for="row in hoveredTooltip.costs"
+                    :key="row.label"
+                    style="
+                      display: flex;
+                      justify-content: space-between;
+                      align-items: center;
+                      font-size: 0.76rem;
+                      line-height: 1.8;
+                    "
+                  >
+                    <span style="color: var(--color-fac-text-dim)">{{
+                      row.label
+                    }}</span>
+                    <span
+                      :style="{
+                        color: row.canAfford
+                          ? 'var(--color-fac-text-dim)'
+                          : '#ff6b6b',
+                        fontWeight: '700',
+                      }"
+                    >
+                      {{ row.amount }}
+                      {{ row.canAfford ? "✓" : "✗" }}
+                    </span>
+                  </div>
                 </div>
               </div>
               <div

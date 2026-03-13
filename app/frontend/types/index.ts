@@ -60,13 +60,19 @@ export type PlayerAction = {
 };
 
 export type PlayerActionData = {
-  [key: string]: string | number | null;
+  [key: string]: string | number | CraftingCost | null | undefined;
+};
+
+export type CraftingCost = {
+  wood: number;
+  iron: number;
 };
 
 export type PlayerActionChoice = {
   name: string;
   label: string;
-  [key: string]: string | number | null;
+  cost?: CraftingCost | null;
+  [key: string]: string | number | CraftingCost | null | undefined;
 };
 
 export type PlayerCraftingChoices = Array<PlayerActionChoice>;
