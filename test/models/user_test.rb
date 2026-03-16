@@ -40,6 +40,40 @@ class UserTest < ActiveSupport::TestCase
       &.slot
   end
 
+  # Creates a user + entity with slots, crafts an IrradiationEnclosure, and returns
+  # [user, entity, enclosure_item] so place tests start from a known good state.
+  def create_user_with_placeable(email:)
+    user   = User.create!(email_address: email, password: "password")
+    entity = user.entity
+    entity.ensure_inventory_slots
+
+    entity.inventory_slots.order(slot: :asc).each { |s| s.update!(inventory_item: nil) }
+
+    wood = WoodInventoryItem.create!(entity: entity, count: 100)
+    iron = IronInventoryItem.create!(entity: entity, count: 100)
+    slots = entity.inventory_slots.order(slot: :asc).to_a
+    slots[0].update!(inventory_item: wood)
+    slots[1].update!(inventory_item: iron)
+
+    result = IrradiationEnclosure.craft(user, {})
+    assert result[:success], "Precondition: craft must succeed (got: #{result.inspect})"
+
+    enclosure_item = InventoryItem.where(entity: entity, type: "IrradiationEnclosureInventoryItem").first
+    assert_not_nil enclosure_item, "Precondition: IrradiationEnclosureInventoryItem must exist"
+
+    [ user, entity, enclosure_item ]
+  end
+
+  # Returns the slot number holding an IrradiationEnclosureInventoryItem for the given entity.
+  def placeable_slot_number(entity)
+    entity.inventory_slots.joins(:inventory_item)
+      .where(inventory_items: { type: "IrradiationEnclosureInventoryItem" })
+      .first
+      &.slot
+  end
+
+
+
   # ---------------------------------------------------------------------------
   # User#use — happy path via slot_number
   # ---------------------------------------------------------------------------
@@ -216,5 +250,110 @@ class UserTest < ActiveSupport::TestCase
     second = loot_box.open!
     assert_equal false,            second[:success]
     assert_equal "already_opened", second[:reason]
+  end
+
+  # ---------------------------------------------------------------------------
+  # User#place — happy path via slot_number
+  # ---------------------------------------------------------------------------
+
+  test "place returns success: true when a valid slot_number is given" do
+    user, entity, enclosure_item = create_user_with_placeable(email: "place_slot@example.com")
+    slot_number = placeable_slot_number(entity)
+    assert_not_nil slot_number, "Precondition: placeable item must be in a slot"
+
+    result = user.place({ "slot_number" => slot_number })
+
+    assert result.is_a?(Hash)
+    assert_equal true, result[:success], "Expected place to succeed (got: #{result.inspect})"
+    assert_nil result[:reason]
+    assert_kind_of Array, result[:mutations]
+  end
+
+  test "place removes the IrradiationEnclosureInventoryItem from inventory" do
+    user, entity, _enclosure_item = create_user_with_placeable(email: "place_removes@example.com")
+    slot_number = placeable_slot_number(entity)
+
+    assert InventoryItem.where(entity: entity, type: "IrradiationEnclosureInventoryItem").exists?,
+           "Precondition: IrradiationEnclosureInventoryItem must exist before place"
+
+    user.place({ "slot_number" => slot_number })
+
+    assert_not InventoryItem.where(entity: entity, type: "IrradiationEnclosureInventoryItem").exists?,
+               "Expected IrradiationEnclosureInventoryItem to be removed after place"
+  end
+
+  test "place stamps placed_at on the IrradiationEnclosure entity" do
+    user, entity, enclosure_item = create_user_with_placeable(email: "place_placed_at@example.com")
+    slot_number = placeable_slot_number(entity)
+
+    enclosure = enclosure_item.irradiation_enclosure
+    assert_nil enclosure.placed_at, "Precondition: placed_at must be nil before place"
+
+    user.place({ "slot_number" => slot_number })
+    enclosure.reload
+
+    assert_not_nil enclosure.placed_at, "Expected placed_at to be stamped after place"
+  end
+
+  test "place returns a mutations array with at least one entry on success" do
+    user, entity, _enclosure_item = create_user_with_placeable(email: "place_mutations@example.com")
+    slot_number = placeable_slot_number(entity)
+
+    result = user.place({ "slot_number" => slot_number })
+
+    assert_kind_of Array, result[:mutations]
+    assert_not_empty result[:mutations]
+  end
+
+  # ---------------------------------------------------------------------------
+  # User#place — fallback (no slot_number)
+  # ---------------------------------------------------------------------------
+
+  test "place falls back to first placeable item when no slot_number is provided" do
+    user, entity, _enclosure_item = create_user_with_placeable(email: "place_fallback@example.com")
+
+    result = user.place(nil)
+
+    assert result.is_a?(Hash)
+    assert_equal true, result[:success],
+                 "Expected place to succeed via fallback when slot_number is absent (got: #{result.inspect})"
+  end
+
+  test "place falls back to first placeable item when action_data is an empty hash" do
+    user, entity, _enclosure_item = create_user_with_placeable(email: "place_fallback_empty@example.com")
+
+    result = user.place({})
+
+    assert_equal true, result[:success],
+                 "Expected place to succeed via fallback with empty action_data (got: #{result.inspect})"
+  end
+
+  # ---------------------------------------------------------------------------
+  # User#place — guard: no placeable item
+  # ---------------------------------------------------------------------------
+
+  test "place returns no_placeable_item when entity has no placeable item in inventory" do
+    user   = User.create!(email_address: "place_no_item@example.com", password: "password")
+    entity = user.entity
+    entity.ensure_inventory_slots
+
+    result = user.place({ "slot_number" => 0 })
+
+    assert_equal false,               result[:success]
+    assert_equal "no_placeable_item", result[:reason]
+  end
+
+  test "place returns no_placeable_item when slot_number points to a non-placeable item" do
+    user   = User.create!(email_address: "place_wrong_slot@example.com", password: "password")
+    entity = user.entity
+    entity.ensure_inventory_slots
+
+    wood = WoodInventoryItem.create!(entity: entity, count: 10)
+    entity.inventory_slots.order(slot: :asc).first.update!(inventory_item: wood)
+
+    result = user.place({ "slot_number" => 0 })
+
+    assert_equal false,               result[:success]
+    assert_equal "no_placeable_item", result[:reason]
   end
 end

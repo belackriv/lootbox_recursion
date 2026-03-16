@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { PlayerAction, PlayerActionData } from "@/types/index.ts";
-import { LOOTBOX_ITEM_TYPE } from "@/types/index.ts";
+import { LOOTBOX_ITEM_TYPE, PLACEABLE_ITEM_TYPES } from "@/types/index.ts";
 import { inject, ref, computed } from "vue";
 import { usePlayerStore } from "@/store/player.ts";
 import PlayerActionsChannel from "@/channels/playerActions.ts";
@@ -18,6 +18,10 @@ const store = usePlayerStore();
 const isDisabled = computed(() => {
   if (props.name === "use") {
     return store.selectedSlotItem?.type !== LOOTBOX_ITEM_TYPE;
+  }
+  if (props.name === "place") {
+    const selectedType = store.selectedSlotItem?.type;
+    return !selectedType || !PLACEABLE_ITEM_TYPES.includes(selectedType);
   }
   return props.disabled;
 });
@@ -53,6 +57,12 @@ const onClick = () => {
   if (onCooldown.value || castTimeProgress.value > 0) return false;
 
   if (props.name === "use") {
+    const actionData =
+      store.selectedSlotIndex !== null
+        ? { slotNumber: store.selectedSlotIndex }
+        : null;
+    performAction(actionData);
+  } else if (props.name === "place") {
     const actionData =
       store.selectedSlotIndex !== null
         ? { slotNumber: store.selectedSlotIndex }

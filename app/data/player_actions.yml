@@ -47,6 +47,22 @@ player_actions:
         value: 0
     reveal_requirements: []
 
+  - name: "place"
+    label: "Place"
+    tooltip: "Place the selected item in the game world. Select a placeable entity from your inventory."
+    disabled: true
+    revealed: true
+    cooldown: 1
+    on_cooldown_until: null
+    cast_time: 0
+    choices: []
+    requirements:
+      - check: "inventory_items"
+        for_item_type: "IrradiationEnclosureInventoryItem"
+        condition: "gt"
+        value: 0
+    reveal_requirements: []
+
   - name: "sort_inventory"
     label: "Sort"
     tooltip: "Automatically sort and consolidate your inventory slots."

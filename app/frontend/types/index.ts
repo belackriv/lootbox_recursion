@@ -2,6 +2,10 @@ export const LOOTBOX_ITEM_TYPE = "LootBoxInventoryItem";
 export const IRRADIATION_ENCLOSURE_ITEM_TYPE =
   "IrradiationEnclosureInventoryItem";
 
+export const PLACEABLE_ITEM_TYPES: ReadonlyArray<string> = [
+  IRRADIATION_ENCLOSURE_ITEM_TYPE,
+];
+
 export type Flash = {
   notice?: string;
   alert?: string;

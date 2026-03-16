@@ -170,6 +170,37 @@ class User < ApplicationRecord
     loot_box.open!
   end
 
+  def place(action_data)
+    slot_number = action_data&.dig("slot_number")
+
+    placeable_item = nil
+
+    if slot_number.present?
+      slot = entity.inventory_slots.includes(:inventory_item).find_by(slot: slot_number)
+      item = slot&.inventory_item
+      if item.is_a?(IrradiationEnclosureInventoryItem)
+        placeable_item = item
+      end
+    end
+
+    # Fallback: find the first placeable item in inventory if no slot was given
+    if placeable_item.nil?
+      placeable_slot = entity.inventory_slots
+        .joins(:inventory_item)
+        .where(inventory_items: { type: "IrradiationEnclosureInventoryItem" })
+        .order(slot: :asc)
+        .first
+      placeable_item = placeable_slot&.inventory_item
+    end
+
+    if placeable_item.nil?
+      Rails.logger.warn("User#place: no placeable item found for user=#{id} slot_number=#{slot_number.inspect}")
+      return { success: false, reason: "no_placeable_item" }
+    end
+
+    placeable_item.place!(self)
+  end
+
   def sort_inventory(action_data)
     entity.sort_and_compress_inventory!
     inventory_payload = entity.inventory_slots.order(:slot).limit(100).map { |slot| slot.to_jbuilder.attributes! }
