@@ -54,6 +54,7 @@ const onMouseLeave = () => {
 
 const isDisabled = computed(() => {
   if (onCooldown.value || castTimeProgress.value > 0) return true;
+  if (store.craftingInProgress) return true;
   if (props.action?.disabled) return true;
   return !store.canAfford(props.choice.cost);
 });
@@ -69,6 +70,7 @@ const performAction = (actionData: PlayerActionData | null) => {
   );
 
   onCooldown.value = true;
+  store.startCrafting();
 
   const clickedAt = performance.now();
   const onCooldownUntil = clickedAt + props.action.cooldown * 1000;
@@ -86,6 +88,7 @@ const performAction = (actionData: PlayerActionData | null) => {
       requestAnimationFrame(animationLoop);
     } else {
       castTimeProgress.value = 0;
+      store.finishCrafting();
     }
   }
   requestAnimationFrame(animationLoop);

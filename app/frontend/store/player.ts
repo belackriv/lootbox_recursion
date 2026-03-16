@@ -49,6 +49,7 @@ export const usePlayerStore = defineStore("player", () => {
   const availableActions = ref(defaultActions);
   const selectedSlotIndex = ref<number | null>(null);
   const hoveredTooltip = ref<TooltipContent | null>(null);
+  const craftingInProgress = ref<boolean>(false);
 
   // Reactive map of item type → total count across all inventory slots.
   const inventoryTotals = computed<Record<string, number>>(() => {
@@ -94,6 +95,14 @@ export const usePlayerStore = defineStore("player", () => {
 
   const clearTooltip = () => {
     hoveredTooltip.value = null;
+  };
+
+  const startCrafting = () => {
+    craftingInProgress.value = true;
+  };
+
+  const finishCrafting = () => {
+    craftingInProgress.value = false;
   };
 
   const updateAvailableActions = (
@@ -264,12 +273,15 @@ export const usePlayerStore = defineStore("player", () => {
     availableActions,
     selectedSlotIndex,
     hoveredTooltip,
+    craftingInProgress,
     selectSlot,
     selectedSlotItem,
     inventoryTotals,
     canAfford,
     setTooltip,
     clearTooltip,
+    startCrafting,
+    finishCrafting,
     updateAvailableActions,
     updateInventory,
     mutateInventory,

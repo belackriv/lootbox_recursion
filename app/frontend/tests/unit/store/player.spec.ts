@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { createPinia, setActivePinia } from "pinia";
 import { usePlayerStore, inventoryRowLength } from "../../../store/player";
 
@@ -124,5 +124,56 @@ describe("player store - mutateInventory", () => {
     // still unchanged because mutation was not applied
     const after = getGridSlot(store, targetSlot).slot.inventoryItem;
     expect(after).toBeNull();
+  });
+
+  describe("player store - craftingInProgress", () => {
+    beforeEach(() => {
+      setActivePinia(createPinia());
+      vi.useFakeTimers();
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it("craftingInProgress is false by default", () => {
+      const store = usePlayerStore();
+      expect(store.craftingInProgress).toBe(false);
+    });
+
+    it("startCrafting sets craftingInProgress to true", () => {
+      const store = usePlayerStore();
+      store.startCrafting();
+      expect(store.craftingInProgress).toBe(true);
+    });
+
+    it("finishCrafting sets craftingInProgress back to false", () => {
+      const store = usePlayerStore();
+      store.startCrafting();
+      store.finishCrafting();
+      expect(store.craftingInProgress).toBe(false);
+    });
+
+    it("finishCrafting is a no-op when crafting was never started", () => {
+      const store = usePlayerStore();
+      store.finishCrafting();
+      expect(store.craftingInProgress).toBe(false);
+    });
+
+    it("craftingInProgress can be toggled on and off multiple times", () => {
+      const store = usePlayerStore();
+
+      store.startCrafting();
+      expect(store.craftingInProgress).toBe(true);
+
+      store.finishCrafting();
+      expect(store.craftingInProgress).toBe(false);
+
+      store.startCrafting();
+      expect(store.craftingInProgress).toBe(true);
+
+      store.finishCrafting();
+      expect(store.craftingInProgress).toBe(false);
+    });
   });
 });
