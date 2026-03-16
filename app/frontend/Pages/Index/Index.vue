@@ -8,6 +8,8 @@ import SortButton from "@/Shared/SortButton.vue";
 import { PlayerAction, InventorySlot } from "@/types/index.ts";
 import { usePlayerStore } from "@/store/player.ts";
 
+const ACTION_PANEL_WHITELIST = ["scavenge", "craft", "use", "sort_inventory"];
+
 const props = defineProps<{
   actions: Array<PlayerAction>;
   inventory: Array<InventorySlot>;
@@ -25,7 +27,11 @@ watch(
   { immediate: true, deep: true }
 );
 
-const renderedActions = computed(() => availableActions.value ?? []);
+const renderedActions = computed(() =>
+  (availableActions.value ?? []).filter((a) =>
+    ACTION_PANEL_WHITELIST.includes(a.name)
+  )
+);
 
 const sortAction = computed(
   () => renderedActions.value.find((a) => a.name === "sort_inventory") ?? null
@@ -39,10 +45,7 @@ const nonSortActions = computed(() =>
 <template>
   <div style="display: flex; align-items: stretch; gap: 8px; height: 100%">
     <!-- Actions column — sized to content -->
-    <div
-      class="fac-panel"
-      style="align-self: flex-start; min-width: 220px; max-width: 420px"
-    >
+    <div class="fac-panel" style="align-self: flex-start; width: 420px">
       <div class="fac-title-bar">◈ Actions</div>
       <div style="padding: 8px">
         <ActionBar :actions="nonSortActions" />
