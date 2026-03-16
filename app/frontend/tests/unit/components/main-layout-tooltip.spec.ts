@@ -18,7 +18,7 @@ function mountLayout(pinia: ReturnType<typeof createPinia>) {
         NavLink: { template: "<a><slot /></a>" },
       },
     },
-    props: { currentUser: null },
+    props: { currentUser: { emailAddress: "test@example.com" } },
     slots: { default: "<div>page content</div>" },
   });
 }
@@ -60,7 +60,10 @@ describe("MainLayout - tooltip sidebar panel", () => {
     const wrapper = mountLayout(pinia);
     const store = usePlayerStore();
 
-    store.setTooltip({ title: "Scavenge", body: "Search the area for raw materials." });
+    store.setTooltip({
+      title: "Scavenge",
+      body: "Search the area for raw materials.",
+    });
     await nextTick();
 
     expect(wrapper.text()).toContain("Scavenge");
@@ -70,7 +73,10 @@ describe("MainLayout - tooltip sidebar panel", () => {
     const wrapper = mountLayout(pinia);
     const store = usePlayerStore();
 
-    store.setTooltip({ title: "Scavenge", body: "Search the area for raw materials." });
+    store.setTooltip({
+      title: "Scavenge",
+      body: "Search the area for raw materials.",
+    });
     await nextTick();
 
     expect(wrapper.text()).toContain("Search the area for raw materials.");
@@ -80,18 +86,26 @@ describe("MainLayout - tooltip sidebar panel", () => {
     const wrapper = mountLayout(pinia);
     const store = usePlayerStore();
 
-    store.setTooltip({ title: "Craft", body: "Craft items from your gathered materials." });
+    store.setTooltip({
+      title: "Craft",
+      body: "Craft items from your gathered materials.",
+    });
     await nextTick();
 
     expect(wrapper.text()).toContain("Craft");
-    expect(wrapper.text()).toContain("Craft items from your gathered materials.");
+    expect(wrapper.text()).toContain(
+      "Craft items from your gathered materials."
+    );
   });
 
   it("hides the placeholder text once a tooltip is active", async () => {
     const wrapper = mountLayout(pinia);
     const store = usePlayerStore();
 
-    store.setTooltip({ title: "Scavenge", body: "Search the area for raw materials." });
+    store.setTooltip({
+      title: "Scavenge",
+      body: "Search the area for raw materials.",
+    });
     await nextTick();
 
     expect(wrapper.text()).not.toContain("Hover an action to see details.");
@@ -103,7 +117,10 @@ describe("MainLayout - tooltip sidebar panel", () => {
     const wrapper = mountLayout(pinia);
     const store = usePlayerStore();
 
-    store.setTooltip({ title: "Scavenge", body: "Search the area for raw materials." });
+    store.setTooltip({
+      title: "Scavenge",
+      body: "Search the area for raw materials.",
+    });
     await nextTick();
 
     store.clearTooltip();
@@ -116,7 +133,10 @@ describe("MainLayout - tooltip sidebar panel", () => {
     const wrapper = mountLayout(pinia);
     const store = usePlayerStore();
 
-    store.setTooltip({ title: "Scavenge", body: "Search the area for raw materials." });
+    store.setTooltip({
+      title: "Scavenge",
+      body: "Search the area for raw materials.",
+    });
     await nextTick();
 
     store.clearTooltip();
@@ -129,7 +149,10 @@ describe("MainLayout - tooltip sidebar panel", () => {
     const wrapper = mountLayout(pinia);
     const store = usePlayerStore();
 
-    store.setTooltip({ title: "Scavenge", body: "Search the area for raw materials." });
+    store.setTooltip({
+      title: "Scavenge",
+      body: "Search the area for raw materials.",
+    });
     await nextTick();
 
     store.clearTooltip();
@@ -144,10 +167,16 @@ describe("MainLayout - tooltip sidebar panel", () => {
     const wrapper = mountLayout(pinia);
     const store = usePlayerStore();
 
-    store.setTooltip({ title: "Scavenge", body: "Search the area for raw materials." });
+    store.setTooltip({
+      title: "Scavenge",
+      body: "Search the area for raw materials.",
+    });
     await nextTick();
 
-    store.setTooltip({ title: "Sort", body: "Automatically sort your inventory." });
+    store.setTooltip({
+      title: "Sort",
+      body: "Automatically sort your inventory.",
+    });
     await nextTick();
 
     expect(wrapper.text()).toContain("Sort");
@@ -157,10 +186,16 @@ describe("MainLayout - tooltip sidebar panel", () => {
     const wrapper = mountLayout(pinia);
     const store = usePlayerStore();
 
-    store.setTooltip({ title: "Scavenge", body: "Search the area for raw materials." });
+    store.setTooltip({
+      title: "Scavenge",
+      body: "Search the area for raw materials.",
+    });
     await nextTick();
 
-    store.setTooltip({ title: "Sort", body: "Automatically sort your inventory." });
+    store.setTooltip({
+      title: "Sort",
+      body: "Automatically sort your inventory.",
+    });
     await nextTick();
 
     expect(wrapper.text()).toContain("Automatically sort your inventory.");
@@ -170,10 +205,16 @@ describe("MainLayout - tooltip sidebar panel", () => {
     const wrapper = mountLayout(pinia);
     const store = usePlayerStore();
 
-    store.setTooltip({ title: "Scavenge", body: "Search the area for raw materials." });
+    store.setTooltip({
+      title: "Scavenge",
+      body: "Search the area for raw materials.",
+    });
     await nextTick();
 
-    store.setTooltip({ title: "Sort", body: "Automatically sort your inventory." });
+    store.setTooltip({
+      title: "Sort",
+      body: "Automatically sort your inventory.",
+    });
     await nextTick();
 
     expect(wrapper.text()).not.toContain("Scavenge");
@@ -183,10 +224,16 @@ describe("MainLayout - tooltip sidebar panel", () => {
     const wrapper = mountLayout(pinia);
     const store = usePlayerStore();
 
-    store.setTooltip({ title: "Scavenge", body: "Search the area for raw materials." });
+    store.setTooltip({
+      title: "Scavenge",
+      body: "Search the area for raw materials.",
+    });
     await nextTick();
 
-    store.setTooltip({ title: "Sort", body: "Automatically sort your inventory." });
+    store.setTooltip({
+      title: "Sort",
+      body: "Automatically sort your inventory.",
+    });
     await nextTick();
 
     expect(wrapper.text()).not.toContain("Search the area for raw materials.");
