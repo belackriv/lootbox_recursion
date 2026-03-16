@@ -47,9 +47,9 @@ player_actions:
         value: 0
     reveal_requirements: []
 
-  - name: "place"
-    label: "Place"
-    tooltip: "Place the selected item in the game world. Select a placeable entity from your inventory."
+  - name: "deploy"
+    label: "Deploy"
+    tooltip: "Deploy the selected item into the world. Select a deployable entity from your inventory."
     disabled: true
     revealed: true
     cooldown: 1

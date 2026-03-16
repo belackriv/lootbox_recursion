@@ -19,7 +19,7 @@ const isDisabled = computed(() => {
   if (props.name === "use") {
     return store.selectedSlotItem?.type !== LOOTBOX_ITEM_TYPE;
   }
-  if (props.name === "place") {
+  if (props.name === "deploy") {
     const selectedType = store.selectedSlotItem?.type;
     return !selectedType || !PLACEABLE_ITEM_TYPES.includes(selectedType);
   }
@@ -62,7 +62,7 @@ const onClick = () => {
         ? { slotNumber: store.selectedSlotIndex }
         : null;
     performAction(actionData);
-  } else if (props.name === "place") {
+  } else if (props.name === "deploy") {
     const actionData =
       store.selectedSlotIndex !== null
         ? { slotNumber: store.selectedSlotIndex }

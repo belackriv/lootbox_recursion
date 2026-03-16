@@ -253,105 +253,105 @@ class UserTest < ActiveSupport::TestCase
   end
 
   # ---------------------------------------------------------------------------
-  # User#place — happy path via slot_number
+  # User#deploy — happy path via slot_number
   # ---------------------------------------------------------------------------
 
-  test "place returns success: true when a valid slot_number is given" do
-    user, entity, enclosure_item = create_user_with_placeable(email: "place_slot@example.com")
+  test "deploy returns success: true when a valid slot_number is given" do
+    user, entity, enclosure_item = create_user_with_placeable(email: "deploy_slot@example.com")
     slot_number = placeable_slot_number(entity)
-    assert_not_nil slot_number, "Precondition: placeable item must be in a slot"
+    assert_not_nil slot_number, "Precondition: deployable item must be in a slot"
 
-    result = user.place({ "slot_number" => slot_number })
+    result = user.deploy({ "slot_number" => slot_number })
 
     assert result.is_a?(Hash)
-    assert_equal true, result[:success], "Expected place to succeed (got: #{result.inspect})"
+    assert_equal true, result[:success], "Expected deploy to succeed (got: #{result.inspect})"
     assert_nil result[:reason]
     assert_kind_of Array, result[:mutations]
   end
 
-  test "place removes the IrradiationEnclosureInventoryItem from inventory" do
-    user, entity, _enclosure_item = create_user_with_placeable(email: "place_removes@example.com")
+  test "deploy removes the IrradiationEnclosureInventoryItem from inventory" do
+    user, entity, _enclosure_item = create_user_with_placeable(email: "deploy_removes@example.com")
     slot_number = placeable_slot_number(entity)
 
     assert InventoryItem.where(entity: entity, type: "IrradiationEnclosureInventoryItem").exists?,
-           "Precondition: IrradiationEnclosureInventoryItem must exist before place"
+           "Precondition: IrradiationEnclosureInventoryItem must exist before deploy"
 
-    user.place({ "slot_number" => slot_number })
+    user.deploy({ "slot_number" => slot_number })
 
     assert_not InventoryItem.where(entity: entity, type: "IrradiationEnclosureInventoryItem").exists?,
-               "Expected IrradiationEnclosureInventoryItem to be removed after place"
+               "Expected IrradiationEnclosureInventoryItem to be removed after deploy"
   end
 
-  test "place stamps placed_at on the IrradiationEnclosure entity" do
-    user, entity, enclosure_item = create_user_with_placeable(email: "place_placed_at@example.com")
+  test "deploy stamps placed_at on the IrradiationEnclosure entity" do
+    user, entity, enclosure_item = create_user_with_placeable(email: "deploy_placed_at@example.com")
     slot_number = placeable_slot_number(entity)
 
     enclosure = enclosure_item.irradiation_enclosure
-    assert_nil enclosure.placed_at, "Precondition: placed_at must be nil before place"
+    assert_nil enclosure.placed_at, "Precondition: placed_at must be nil before deploy"
 
-    user.place({ "slot_number" => slot_number })
+    user.deploy({ "slot_number" => slot_number })
     enclosure.reload
 
-    assert_not_nil enclosure.placed_at, "Expected placed_at to be stamped after place"
+    assert_not_nil enclosure.placed_at, "Expected placed_at to be stamped after deploy"
   end
 
-  test "place returns a mutations array with at least one entry on success" do
-    user, entity, _enclosure_item = create_user_with_placeable(email: "place_mutations@example.com")
+  test "deploy returns a mutations array with at least one entry on success" do
+    user, entity, _enclosure_item = create_user_with_placeable(email: "deploy_mutations@example.com")
     slot_number = placeable_slot_number(entity)
 
-    result = user.place({ "slot_number" => slot_number })
+    result = user.deploy({ "slot_number" => slot_number })
 
     assert_kind_of Array, result[:mutations]
     assert_not_empty result[:mutations]
   end
 
   # ---------------------------------------------------------------------------
-  # User#place — fallback (no slot_number)
+  # User#deploy — fallback (no slot_number)
   # ---------------------------------------------------------------------------
 
-  test "place falls back to first placeable item when no slot_number is provided" do
-    user, entity, _enclosure_item = create_user_with_placeable(email: "place_fallback@example.com")
+  test "deploy falls back to first deployable item when no slot_number is provided" do
+    user, entity, _enclosure_item = create_user_with_placeable(email: "deploy_fallback@example.com")
 
-    result = user.place(nil)
+    result = user.deploy(nil)
 
     assert result.is_a?(Hash)
     assert_equal true, result[:success],
-                 "Expected place to succeed via fallback when slot_number is absent (got: #{result.inspect})"
+                 "Expected deploy to succeed via fallback when slot_number is absent (got: #{result.inspect})"
   end
 
-  test "place falls back to first placeable item when action_data is an empty hash" do
-    user, entity, _enclosure_item = create_user_with_placeable(email: "place_fallback_empty@example.com")
+  test "deploy falls back to first deployable item when action_data is an empty hash" do
+    user, entity, _enclosure_item = create_user_with_placeable(email: "deploy_fallback_empty@example.com")
 
-    result = user.place({})
+    result = user.deploy({})
 
     assert_equal true, result[:success],
-                 "Expected place to succeed via fallback with empty action_data (got: #{result.inspect})"
+                 "Expected deploy to succeed via fallback with empty action_data (got: #{result.inspect})"
   end
 
   # ---------------------------------------------------------------------------
-  # User#place — guard: no placeable item
+  # User#deploy — guard: no deployable item
   # ---------------------------------------------------------------------------
 
-  test "place returns no_placeable_item when entity has no placeable item in inventory" do
-    user   = User.create!(email_address: "place_no_item@example.com", password: "password")
+  test "deploy returns no_placeable_item when entity has no deployable item in inventory" do
+    user   = User.create!(email_address: "deploy_no_item@example.com", password: "password")
     entity = user.entity
     entity.ensure_inventory_slots
 
-    result = user.place({ "slot_number" => 0 })
+    result = user.deploy({ "slot_number" => 0 })
 
     assert_equal false,               result[:success]
     assert_equal "no_placeable_item", result[:reason]
   end
 
-  test "place returns no_placeable_item when slot_number points to a non-placeable item" do
-    user   = User.create!(email_address: "place_wrong_slot@example.com", password: "password")
+  test "deploy returns no_placeable_item when slot_number points to a non-deployable item" do
+    user   = User.create!(email_address: "deploy_wrong_slot@example.com", password: "password")
     entity = user.entity
     entity.ensure_inventory_slots
 
     wood = WoodInventoryItem.create!(entity: entity, count: 10)
     entity.inventory_slots.order(slot: :asc).first.update!(inventory_item: wood)
 
-    result = user.place({ "slot_number" => 0 })
+    result = user.deploy({ "slot_number" => 0 })
 
     assert_equal false,               result[:success]
     assert_equal "no_placeable_item", result[:reason]

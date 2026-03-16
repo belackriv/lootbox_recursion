@@ -8,6 +8,10 @@ import {
   InventorySlot,
   InventoryGridSlot,
   CraftingCost,
+  WorldCell,
+  PlacedEntity,
+  WORLD_GRID_SIZE,
+  PLACEABLE_ITEM_TYPES,
 } from "../types/index.ts";
 import PlayerActionsChannel from "@/channels/playerActions.ts";
 
@@ -32,6 +36,11 @@ for (let row = 0; row < inventoryRowCount; row++) {
 
 const defaultActions: Array<PlayerAction> = [];
 
+const defaultWorldCells: Array<WorldCell> = Array.from(
+  { length: WORLD_GRID_SIZE },
+  (_, i) => ({ index: i, placedEntity: null })
+);
+
 export type TooltipCostRow = {
   label: string;
   amount: number;
@@ -48,8 +57,12 @@ export const usePlayerStore = defineStore("player", () => {
   const inventory = ref({ rows: inventoryRows });
   const availableActions = ref(defaultActions);
   const selectedSlotIndex = ref<number | null>(null);
+  const selectedWorldCellIndex = ref<number | null>(null);
   const hoveredTooltip = ref<TooltipContent | null>(null);
   const craftingInProgress = ref<boolean>(false);
+  const worldCells = ref<Array<WorldCell>>(
+    defaultWorldCells.map((c) => ({ ...c }))
+  );
 
   // Reactive map of item type → total count across all inventory slots.
   const inventoryTotals = computed<Record<string, number>>(() => {
@@ -88,6 +101,54 @@ export const usePlayerStore = defineStore("player", () => {
       inventory.value.rows[rowIndex]?.[columnIndex]?.slot?.inventoryItem ?? null
     );
   });
+
+  const selectWorldCell = (index: number) => {
+    selectedWorldCellIndex.value =
+      selectedWorldCellIndex.value === index ? null : index;
+  };
+
+  // Returns true when the currently selected inventory item is placeable
+  const selectedItemIsPlaceable = computed(() => {
+    const item = selectedSlotItem.value;
+    if (!item?.type) return false;
+    return PLACEABLE_ITEM_TYPES.includes(item.type);
+  });
+
+  // Returns true when placing is possible: a placeable item AND an empty world cell are both selected
+  const canPlaceSelected = computed(() => {
+    if (!selectedItemIsPlaceable.value) return false;
+    if (selectedWorldCellIndex.value === null) return false;
+    const cell = worldCells.value[selectedWorldCellIndex.value];
+    return cell !== undefined && cell.placedEntity === null;
+  });
+
+  const placeSelectedEntity = () => {
+    if (!canPlaceSelected.value) return;
+    const item = selectedSlotItem.value!;
+    const cellIndex = selectedWorldCellIndex.value!;
+
+    worldCells.value[cellIndex] = {
+      index: cellIndex,
+      placedEntity: {
+        type: item.type,
+        displayName: item.displayName ?? null,
+        tooltip: item.tooltip ?? null,
+      } as PlacedEntity,
+    };
+
+    // Deselect both after placement
+    selectedSlotIndex.value = null;
+    selectedWorldCellIndex.value = null;
+  };
+
+  const removeEntityFromCell = (index: number) => {
+    if (worldCells.value[index]) {
+      worldCells.value[index] = { index, placedEntity: null };
+    }
+    if (selectedWorldCellIndex.value === index) {
+      selectedWorldCellIndex.value = null;
+    }
+  };
 
   const setTooltip = (content: TooltipContent) => {
     hoveredTooltip.value = content;
@@ -272,10 +333,17 @@ export const usePlayerStore = defineStore("player", () => {
     inventory,
     availableActions,
     selectedSlotIndex,
+    selectedWorldCellIndex,
     hoveredTooltip,
     craftingInProgress,
+    worldCells,
     selectSlot,
+    selectWorldCell,
     selectedSlotItem,
+    selectedItemIsPlaceable,
+    canPlaceSelected,
+    placeSelectedEntity,
+    removeEntityFromCell,
     inventoryTotals,
     canAfford,
     setTooltip,

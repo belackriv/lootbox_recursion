@@ -3,6 +3,7 @@ import { computed, watch } from "vue";
 import { storeToRefs } from "pinia";
 import ActionBar from "@/Layouts/ActionBar.vue";
 import InventoryGrid from "@/Layouts/InventoryGrid.vue";
+import WorldGrid from "@/Layouts/WorldGrid.vue";
 import SortButton from "@/Shared/SortButton.vue";
 import { PlayerAction, InventorySlot } from "@/types/index.ts";
 import { usePlayerStore } from "@/store/player.ts";
@@ -36,13 +37,11 @@ const nonSortActions = computed(() =>
 </script>
 
 <template>
-  <div
-    style="display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px"
-  >
-    <!-- Actions Panel -->
+  <div style="display: flex; align-items: stretch; gap: 8px; height: 100%">
+    <!-- Actions column — sized to content -->
     <div
       class="fac-panel"
-      style="min-width: 220px; flex: 1 1 220px; max-width: 420px"
+      style="align-self: flex-start; min-width: 220px; max-width: 420px"
     >
       <div class="fac-title-bar">◈ Actions</div>
       <div style="padding: 8px">
@@ -50,8 +49,8 @@ const nonSortActions = computed(() =>
       </div>
     </div>
 
-    <!-- Inventory Panel -->
-    <div class="fac-panel" style="flex: 0 0 auto">
+    <!-- Inventory column — sized to content -->
+    <div class="fac-panel" style="align-self: flex-start; flex: 0 0 auto">
       <div
         class="fac-title-bar"
         style="
@@ -70,6 +69,20 @@ const nonSortActions = computed(() =>
       <div style="padding: 8px">
         <InventoryGrid :inventory="inventory" />
       </div>
+    </div>
+
+    <!-- World Grid Panel — stretches full height independently -->
+    <div
+      class="fac-panel"
+      style="
+        flex: 0 0 220px;
+        display: flex;
+        flex-direction: column;
+        align-self: stretch;
+      "
+    >
+      <div class="fac-title-bar">⬡ Deployed</div>
+      <WorldGrid style="flex: 1; min-height: 0" />
     </div>
   </div>
 </template>

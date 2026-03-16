@@ -1,3 +1,5 @@
+export const WORLD_GRID_SIZE = 32;
+
 export const LOOTBOX_ITEM_TYPE = "LootBoxInventoryItem";
 export const IRRADIATION_ENCLOSURE_ITEM_TYPE =
   "IrradiationEnclosureInventoryItem";
@@ -95,3 +97,16 @@ export type InventoryMutation = {
 export type InventoryChannelEnvelope =
   | { action: "inventory_mutations"; data: Array<InventoryMutation> }
   | { action: "inventory_snapshot"; data: Array<InventorySlot> };
+
+// ---- World Grid ----
+
+export type PlacedEntity = {
+  type: string;
+  displayName?: string | null;
+  tooltip?: string | null;
+};
+
+export type WorldCell = {
+  index: number;
+  placedEntity: PlacedEntity | null;
+};

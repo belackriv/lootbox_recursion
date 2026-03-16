@@ -21,7 +21,7 @@ const { hoveredTooltip } = storeToRefs(store);
 
 <template>
   <div
-    class="min-h-screen flex flex-col"
+    class="h-screen flex flex-col overflow-hidden"
     style="background-color: var(--color-fac-bg)"
   >
     <!-- Header (full width) -->
@@ -71,7 +71,10 @@ const { hoveredTooltip } = storeToRefs(store);
     <!-- Body row: main content + right tooltip sidebar -->
     <div class="flex flex-1" style="min-height: 0; gap: 0">
       <!-- Main content -->
-      <main class="flex-1 p-2" style="min-width: 0">
+      <main
+        class="flex-1 p-2"
+        style="min-width: 0; overflow: hidden; height: 100%"
+      >
         <slot />
       </main>
 

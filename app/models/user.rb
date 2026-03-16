@@ -170,7 +170,7 @@ class User < ApplicationRecord
     loot_box.open!
   end
 
-  def place(action_data)
+  def deploy(action_data)
     slot_number = action_data&.dig("slot_number")
 
     placeable_item = nil
@@ -194,7 +194,7 @@ class User < ApplicationRecord
     end
 
     if placeable_item.nil?
-      Rails.logger.warn("User#place: no placeable item found for user=#{id} slot_number=#{slot_number.inspect}")
+      Rails.logger.warn("User#deploy: no deployable item found for user=#{id} slot_number=#{slot_number.inspect}")
       return { success: false, reason: "no_placeable_item" }
     end
 
