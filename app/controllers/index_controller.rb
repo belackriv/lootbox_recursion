@@ -6,6 +6,7 @@ class IndexController < InertiaController
       render inertia: "Index/Index", props: {
         currentUser: Current.user.to_jbuilder.attributes!,
         logoutPath: session_path,
+        userEntityId: Current.user.entity.id,
         inventory: Current.user.entity.inventory_slots.order(:slot).limit(100).map do |slot|
           slot.to_jbuilder.attributes!
         end,

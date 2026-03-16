@@ -3,12 +3,14 @@ import { computed, watch } from "vue";
 import { storeToRefs } from "pinia";
 import ActionBar from "@/Layouts/ActionBar.vue";
 import InventoryGrid from "@/Layouts/InventoryGrid.vue";
+import SortButton from "@/Shared/SortButton.vue";
 import { PlayerAction, InventorySlot } from "@/types/index.ts";
 import { usePlayerStore } from "@/store/player.ts";
 
 const props = defineProps<{
   actions: Array<PlayerAction>;
   inventory: Array<InventorySlot>;
+  userEntityId: number;
 }>();
 
 const playerStore = usePlayerStore();
@@ -23,6 +25,14 @@ watch(
 );
 
 const renderedActions = computed(() => availableActions.value ?? []);
+
+const sortAction = computed(
+  () => renderedActions.value.find((a) => a.name === "sort_inventory") ?? null
+);
+
+const nonSortActions = computed(() =>
+  renderedActions.value.filter((a) => a.name !== "sort_inventory")
+);
 </script>
 
 <template>
@@ -36,13 +46,27 @@ const renderedActions = computed(() => availableActions.value ?? []);
     >
       <div class="fac-title-bar">◈ Actions</div>
       <div style="padding: 8px">
-        <ActionBar :actions="renderedActions" />
+        <ActionBar :actions="nonSortActions" />
       </div>
     </div>
 
     <!-- Inventory Panel -->
     <div class="fac-panel" style="flex: 0 0 auto">
-      <div class="fac-title-bar">▦ Inventory</div>
+      <div
+        class="fac-title-bar"
+        style="
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        "
+      >
+        <span>▦ Inventory</span>
+        <SortButton
+          v-if="sortAction"
+          :action="sortAction"
+          :entity-id="props.userEntityId"
+        />
+      </div>
       <div style="padding: 8px">
         <InventoryGrid :inventory="inventory" />
       </div>

@@ -202,8 +202,9 @@ class User < ApplicationRecord
   end
 
   def sort_inventory(action_data)
-    entity.sort_and_compress_inventory!
-    inventory_payload = entity.inventory_slots.order(:slot).limit(100).map { |slot| slot.to_jbuilder.attributes! }
+    target_entity = resolve_entity_from_action_data(action_data) || entity
+    target_entity.sort_and_compress_inventory!
+    inventory_payload = target_entity.inventory_slots.order(:slot).limit(100).map { |slot| slot.to_jbuilder.attributes! }
     PlayerInventoryChannel.broadcast_to(self, { action: "inventory_snapshot", data: inventory_payload })
   end
 
@@ -233,5 +234,18 @@ class User < ApplicationRecord
       action.to_jbuilder.attributes!
     end
     PlayerActionsChannel.broadcast_to(self, updated_actions)
+  end
+
+  private
+
+  def resolve_entity_from_action_data(action_data)
+    entity_id = action_data&.dig("entity_id")
+    return nil if entity_id.blank?
+
+    # Only allow access to entities the current user owns
+    candidate = Entity.find_by(id: entity_id)
+    return nil unless candidate && candidate.user_id == id
+
+    candidate
   end
 end
