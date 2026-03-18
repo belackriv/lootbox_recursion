@@ -3,12 +3,17 @@ import { computed } from "vue";
 import type { WorldCell } from "@/types/index.ts";
 import { usePlayerStore } from "@/store/player.ts";
 import ItemSprite from "@/Sprites/ItemSprite.vue";
+import PlayerActionsChannel from "@/channels/playerActions.ts";
 
-const props = defineProps<{ cell: WorldCell }>();
+const props = defineProps<{
+  cell: WorldCell;
+  channel: PlayerActionsChannel | undefined;
+}>();
+
 const store = usePlayerStore();
 
 const isSelected = computed(
-  () => store.selectedWorldCellIndex === props.cell.index
+  () => store.selectedWorldCellCoordinate === props.cell.coordinate
 );
 
 const isEmpty = computed(() => props.cell.placedEntity === null);
@@ -20,7 +25,7 @@ const isPlacementTarget = computed(
 const onMouseEnter = () => {
   const entity = props.cell.placedEntity;
   store.setTooltip({
-    title: `Cell ${props.cell.index}`,
+    title: `Cell ${props.cell.coordinate}`,
     body: entity
       ? (entity.displayName ?? entity.type) +
         (entity.tooltip ? `\n${entity.tooltip}` : "")
@@ -33,17 +38,23 @@ const onMouseLeave = () => {
 };
 
 const onClick = () => {
-  // If a deployable item is selected and this cell is empty → deploy it immediately
-  if (store.canPlaceSelected && isEmpty.value) {
-    store.placeSelectedEntity();
+  // If a deployable item is selected and this cell is empty → deploy it,
+  // firing the action over the channel (with optimistic local update).
+  if (store.selectedItemIsPlaceable && isEmpty.value) {
+    console.log("[WorldCellSlot] deploy:", {
+      slotNumber: store.selectedSlotIndex,
+      cellCoordinate: props.cell.coordinate,
+      item: store.selectedSlotItem,
+    });
+    store.placeSelectedEntity(props.cell.coordinate, props.channel);
     return;
   }
-  store.selectWorldCell(props.cell.index);
+  store.selectWorldCell(props.cell.coordinate);
 };
 
 const onRemove = (e: MouseEvent) => {
   e.stopPropagation();
-  store.removeEntityFromCell(props.cell.index);
+  store.removeEntityFromCell(props.cell.coordinate, props.channel);
 };
 </script>
 

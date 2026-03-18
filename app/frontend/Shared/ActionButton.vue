@@ -20,8 +20,7 @@ const isDisabled = computed(() => {
     return store.selectedSlotItem?.type !== LOOTBOX_ITEM_TYPE;
   }
   if (props.name === "deploy") {
-    const selectedType = store.selectedSlotItem?.type;
-    return !selectedType || !PLACEABLE_ITEM_TYPES.includes(selectedType);
+    return !store.selectedItemIsPlaceable;
   }
   return props.disabled;
 });
@@ -63,11 +62,8 @@ const onClick = () => {
         : null;
     performAction(actionData);
   } else if (props.name === "deploy") {
-    const actionData =
-      store.selectedSlotIndex !== null
-        ? { slotNumber: store.selectedSlotIndex }
-        : null;
-    performAction(actionData);
+    // Deploy is triggered exclusively by clicking an empty world cell.
+    // Nothing to do here — WorldCellSlot.onClick handles the channel send.
   } else {
     performAction(null);
   }

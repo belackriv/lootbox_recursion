@@ -25,6 +25,10 @@ class InventoryItem < ApplicationRecord
     self.class.tooltip
   end
 
+  def placeable?
+    false
+  end
+
   def to_jbuilder(tags = [ "default" ])
     Jbuilder.new do |jbuilder|
       if tags.include?("default")

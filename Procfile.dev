@@ -1,3 +1,4 @@
 
 vite: bin/vite dev
 web: bin/rails s
+jobs: RAILS_LOG_TO_STDOUT=1 bin/jobs

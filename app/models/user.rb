@@ -89,7 +89,14 @@ class User < ApplicationRecord
       player_action.on_cooldown_until = Time.current + player_action.cooldown
       save_player_action_state(player_action)
 
-      PerformPlayerActionJob.set(wait: player_action.cast_time.seconds).perform_later(self, player_action_name, action_data)
+      if player_action.cast_time == 0
+        # Zero cast time — execute immediately in this thread so the DB write
+        # is committed before the response returns. This prevents a refresh
+        # from seeing stale state when the job queue hasn't run yet.
+        PerformPlayerActionJob.perform_now(self, player_action_name, action_data)
+      else
+        PerformPlayerActionJob.set(wait: player_action.cast_time.seconds).perform_later(self, player_action_name, action_data)
+      end
     end
   end
 
@@ -171,34 +178,41 @@ class User < ApplicationRecord
   end
 
   def deploy(action_data)
-    slot_number = action_data&.dig("slot_number")
+    slot_number     = action_data&.dig("slot_number")
+    cell_coordinate = action_data&.dig("cell_coordinate")
 
-    placeable_item = nil
-
-    if slot_number.present?
-      slot = entity.inventory_slots.includes(:inventory_item).find_by(slot: slot_number)
-      item = slot&.inventory_item
-      if item.is_a?(IrradiationEnclosureInventoryItem)
-        placeable_item = item
-      end
+    if cell_coordinate.nil?
+      Rails.logger.warn("User#deploy: missing cell_coordinate for user=#{id}")
+      return { success: false, reason: "no_coordinate" }
     end
 
-    # Fallback: find the first placeable item in inventory if no slot was given
-    if placeable_item.nil?
-      placeable_slot = entity.inventory_slots
-        .joins(:inventory_item)
-        .where(inventory_items: { type: "IrradiationEnclosureInventoryItem" })
-        .order(slot: :asc)
-        .first
-      placeable_item = placeable_slot&.inventory_item
+    if slot_number.nil?
+      Rails.logger.warn("User#deploy: missing slot_number for user=#{id}")
+      return { success: false, reason: "no_slot_number" }
     end
 
-    if placeable_item.nil?
-      Rails.logger.warn("User#deploy: no deployable item found for user=#{id} slot_number=#{slot_number.inspect}")
+    cell_coordinate = cell_coordinate.to_i
+
+    slot = entity.inventory_slots.includes(:inventory_item).find_by(slot: slot_number)
+    item = slot&.inventory_item
+
+    unless item&.placeable?
+      Rails.logger.warn("User#deploy: slot=#{slot_number} does not contain a deployable item for user=#{id}")
       return { success: false, reason: "no_placeable_item" }
     end
 
-    placeable_item.place!(self)
+    item.place!(self, cell_coordinate)
+  end
+
+  def recall(action_data)
+    cell_coordinate = action_data&.dig("cell_coordinate")
+
+    if cell_coordinate.nil?
+      Rails.logger.warn("User#recall: missing cell_coordinate for user=#{id}")
+      return { success: false, reason: "no_coordinate" }
+    end
+
+    IrradiationEnclosureInventoryItem.recall!(self, cell_coordinate.to_i)
   end
 
   def sort_inventory(action_data)

@@ -16,6 +16,9 @@ const spriteMap: Record<string, ReturnType<typeof defineAsyncComponent>> = {
   IrradiationEnclosureInventoryItem: defineAsyncComponent(
     () => import("@/Sprites/IrradiationEnclosureInventoryItem.vue")
   ),
+  IrradiationEnclosure: defineAsyncComponent(
+    () => import("@/Sprites/IrradiationEnclosureInventoryItem.vue")
+  ),
   UnknownInventoryItem: defineAsyncComponent(
     () => import("@/Sprites/UnknownInventoryItem.vue")
   ),

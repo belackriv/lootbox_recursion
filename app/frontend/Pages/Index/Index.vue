@@ -5,8 +5,11 @@ import ActionBar from "@/Layouts/ActionBar.vue";
 import InventoryGrid from "@/Layouts/InventoryGrid.vue";
 import WorldGrid from "@/Layouts/WorldGrid.vue";
 import SortButton from "@/Shared/SortButton.vue";
-import { PlayerAction, InventorySlot } from "@/types/index.ts";
+import TrimButton from "@/Shared/TrimButton.vue";
+import { PlayerAction, InventorySlot, WorldCell } from "@/types/index.ts";
 import { usePlayerStore } from "@/store/player.ts";
+import PlayerActionsChannel from "@/channels/playerActions.ts";
+import { inject } from "vue";
 
 const ACTION_PANEL_WHITELIST = ["scavenge", "craft", "use", "sort_inventory"];
 
@@ -14,7 +17,12 @@ const props = defineProps<{
   actions: Array<PlayerAction>;
   inventory: Array<InventorySlot>;
   userEntityId: number;
+  worldCells: Array<WorldCell>;
 }>();
+
+const playerActionsChannel = inject<PlayerActionsChannel>(
+  "playerActionsChannel"
+);
 
 const playerStore = usePlayerStore();
 const { availableActions } = storeToRefs(playerStore);
@@ -23,6 +31,14 @@ watch(
   () => props.actions,
   (actions) => {
     playerStore.updateAvailableActions(actions ?? []);
+  },
+  { immediate: true, deep: true }
+);
+
+watch(
+  () => props.worldCells,
+  (cells) => {
+    playerStore.snapshotWorldCells(cells ?? []);
   },
   { immediate: true, deep: true }
 );
@@ -78,14 +94,27 @@ const nonSortActions = computed(() =>
     <div
       class="fac-panel"
       style="
-        flex: 0 0 220px;
+        flex: 0 0 240px;
         display: flex;
         flex-direction: column;
         align-self: stretch;
       "
     >
-      <div class="fac-title-bar">⬡ Deployed</div>
-      <WorldGrid style="flex: 1; min-height: 0" />
+      <div
+        class="fac-title-bar"
+        style="
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        "
+      >
+        <span>⬡ Deployed</span>
+        <TrimButton />
+      </div>
+      <WorldGrid
+        style="flex: 1; min-height: 0"
+        :channel="playerActionsChannel"
+      />
     </div>
   </div>
 </template>

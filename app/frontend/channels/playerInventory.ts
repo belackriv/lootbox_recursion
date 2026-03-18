@@ -1,9 +1,4 @@
-import type {
-  PlayerAction,
-  PlayerActionData,
-  InventoryMutation,
-  InventoryChannelEnvelope,
-} from "@/types";
+import type { InventoryMutation, InventoryChannelEnvelope } from "@/types";
 import type { Consumer, Subscription } from "@rails/actioncable";
 import { usePlayerStore } from "@/store/player.ts";
 
@@ -28,7 +23,7 @@ class PlayerInventoryChannel {
         disconnected: () => {
           // handle disconnection silently
         },
-        received: (data: any) => this.receive(data),
+        received: (data: any) => this.receive(data as InventoryChannelEnvelope),
       }
     );
   }
@@ -42,6 +37,9 @@ class PlayerInventoryChannel {
           break;
         case "inventory_snapshot":
           store.snapshotInventory(envelope.data);
+          break;
+        case "world_cell_update":
+          store.updateWorldCell(envelope.data);
           break;
         default:
           console.warn(

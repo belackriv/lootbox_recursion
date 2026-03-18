@@ -77,9 +77,10 @@ class Entity < ApplicationRecord
         )
         mutation.apply!
 
-        # Link the inventory item back to the crafted record
-        slot.reload
-        item = slot.inventory_item
+        # Link the inventory item back to the crafted record.
+        # Use the mutation's slot reference directly rather than slot.reload
+        # to avoid AR identity-map staleness issues.
+        item = mutation.inventory_slot.inventory_item
         if item && item.respond_to?(:"#{inventory_item_assoc}=")
           item.public_send(:"#{inventory_item_assoc}=", crafted_record)
           item.save!
@@ -272,8 +273,25 @@ class Entity < ApplicationRecord
           current_item.update!(count: desired[:count]) if current_item.count != desired[:count]
         else
           old_item = current_item
-          new_item = Object.const_get(desired[:type]).create!(entity: self, count: desired[:count])
-          inventory_slot.update!(inventory_item: new_item)
+
+          # Try to find an existing item of the desired type that is currently
+          # unslotted (i.e. was displaced from a previous slot in this same
+          # sort pass) so we can move it instead of creating a brand-new record.
+          # This preserves association columns like irradiation_enclosure_id
+          # that bare .create! would leave nil.
+          displaced = inventory_items
+            .where(type: desired[:type])
+            .left_joins(:inventory_slot)
+            .where(inventory_slots: { id: nil })
+            .first
+
+          if displaced
+            displaced.update!(count: desired[:count]) if displaced.count != desired[:count]
+            inventory_slot.update!(inventory_item: displaced)
+          else
+            new_item = Object.const_get(desired[:type]).create!(entity: self, count: desired[:count])
+            inventory_slot.update!(inventory_item: new_item)
+          end
 
           if old_item
             old_item.reload

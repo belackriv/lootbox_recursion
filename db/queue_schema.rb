@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_03_13_215348) do
+ActiveRecord::Schema[8.1].define(version: 2026_03_16_215045) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
 
@@ -18,10 +18,13 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_13_215348) do
     t.datetime "created_at", null: false
     t.bigint "owner_id"
     t.datetime "placed_at"
+    t.bigint "placed_by_user_id"
     t.string "type"
     t.datetime "updated_at", null: false
     t.bigint "user_id"
+    t.integer "world_coordinate"
     t.index ["owner_id"], name: "index_entities_on_owner_id"
+    t.index ["placed_by_user_id", "world_coordinate"], name: "index_entities_on_placed_by_user_id_and_world_coordinate_unique", unique: true, where: "(world_coordinate IS NOT NULL)"
     t.index ["user_id"], name: "index_entities_on_user_id", unique: true
     t.check_constraint "num_nonnulls(user_id, owner_id) = 1", name: "entity_exactly_one_owner"
   end
@@ -261,6 +264,7 @@ ActiveRecord::Schema[8.1].define(version: 2026_03_13_215348) do
 
   add_foreign_key "entities", "entities", column: "owner_id"
   add_foreign_key "entities", "users"
+  add_foreign_key "entities", "users", column: "placed_by_user_id"
   add_foreign_key "inventory_item_mutations", "inventory_slots"
   add_foreign_key "inventory_items", "entities"
   add_foreign_key "inventory_items", "entities", column: "irradiation_enclosure_id"

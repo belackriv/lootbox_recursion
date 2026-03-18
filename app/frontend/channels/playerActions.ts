@@ -28,6 +28,12 @@ class PlayerActionsChannel {
     playerAction: PlayerAction,
     playerActionData: PlayerActionData | null | undefined
   ) {
+    if (playerAction.name === "deploy") {
+      console.log("[PlayerActionsChannel] deploy payload:", {
+        playerAction,
+        playerActionData,
+      });
+    }
     this.subscription?.send({
       playerAction: playerAction,
       playerActionData: playerActionData,

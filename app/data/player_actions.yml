@@ -56,11 +56,19 @@ player_actions:
     on_cooldown_until: null
     cast_time: 0
     choices: []
-    requirements:
-      - check: "inventory_items"
-        for_item_type: "IrradiationEnclosureInventoryItem"
-        condition: "gt"
-        value: 0
+    requirements: []
+    reveal_requirements: []
+
+  - name: "recall"
+    label: "Recall"
+    tooltip: "Recall a deployed entity back into your inventory. Select a world cell to recall from."
+    disabled: true
+    revealed: true
+    cooldown: 1
+    on_cooldown_until: null
+    cast_time: 0
+    choices: []
+    requirements: []
     reveal_requirements: []
 
   - name: "sort_inventory"

@@ -10,7 +10,7 @@ import {
   CraftingCost,
   WorldCell,
   PlacedEntity,
-  WORLD_GRID_SIZE,
+  WorldCellUpdatePayload,
   PLACEABLE_ITEM_TYPES,
 } from "../types/index.ts";
 import PlayerActionsChannel from "@/channels/playerActions.ts";
@@ -36,11 +36,6 @@ for (let row = 0; row < inventoryRowCount; row++) {
 
 const defaultActions: Array<PlayerAction> = [];
 
-const defaultWorldCells: Array<WorldCell> = Array.from(
-  { length: WORLD_GRID_SIZE },
-  (_, i) => ({ index: i, placedEntity: null })
-);
-
 export type TooltipCostRow = {
   label: string;
   amount: number;
@@ -57,12 +52,35 @@ export const usePlayerStore = defineStore("player", () => {
   const inventory = ref({ rows: inventoryRows });
   const availableActions = ref(defaultActions);
   const selectedSlotIndex = ref<number | null>(null);
-  const selectedWorldCellIndex = ref<number | null>(null);
+  const selectedWorldCellCoordinate = ref<number | null>(null);
   const hoveredTooltip = ref<TooltipContent | null>(null);
   const craftingInProgress = ref<boolean>(false);
-  const worldCells = ref<Array<WorldCell>>(
-    defaultWorldCells.map((c) => ({ ...c }))
-  );
+
+  // World cells are keyed by their signed integer coordinate.
+  // This supports negative coordinates and sparse/scrollable windows —
+  // entries are added/removed as the player scrolls.
+  const worldCells = ref<Map<number, WorldCell>>(new Map());
+
+  // The visible window defines which coordinates are always shown, empty or
+  // not. windowStart is the first coordinate; windowSize is how many cells
+  // are in the window. Both can be updated as the player scrolls.
+  const windowStart = ref<number>(0);
+  const windowSize = ref<number>(32);
+  const DEFAULT_WINDOW_START = 0;
+  const DEFAULT_WINDOW_SIZE = 32;
+  const TRIM_LEAD_CELLS = 4; // empty cells to show above the first placed entity
+
+  // Callback registered by WorldGrid so the store can imperatively scroll it.
+  // TrimButton calls scrollToCoordinate without needing access to the DOM ref.
+  let _scrollToCoordinate: ((coordinate: number) => void) | null = null;
+
+  const registerScrollTo = (fn: (coordinate: number) => void) => {
+    _scrollToCoordinate = fn;
+  };
+
+  const scrollToCoordinate = (coordinate: number) => {
+    _scrollToCoordinate?.(coordinate);
+  };
 
   // Reactive map of item type → total count across all inventory slots.
   const inventoryTotals = computed<Record<string, number>>(() => {
@@ -102,53 +120,200 @@ export const usePlayerStore = defineStore("player", () => {
     );
   });
 
-  const selectWorldCell = (index: number) => {
-    selectedWorldCellIndex.value =
-      selectedWorldCellIndex.value === index ? null : index;
+  const selectWorldCell = (coordinate: number) => {
+    selectedWorldCellCoordinate.value =
+      selectedWorldCellCoordinate.value === coordinate ? null : coordinate;
   };
 
-  // Returns true when the currently selected inventory item is placeable
+  // Returns true when the currently selected inventory item is placeable.
   const selectedItemIsPlaceable = computed(() => {
     const item = selectedSlotItem.value;
     if (!item?.type) return false;
     return PLACEABLE_ITEM_TYPES.includes(item.type);
   });
 
-  // Returns true when placing is possible: a placeable item AND an empty world cell are both selected
-  const canPlaceSelected = computed(() => {
-    if (!selectedItemIsPlaceable.value) return false;
-    if (selectedWorldCellIndex.value === null) return false;
-    const cell = worldCells.value[selectedWorldCellIndex.value];
-    return cell !== undefined && cell.placedEntity === null;
+  // Returns the WorldCell for the currently selected coordinate, or null.
+  // Useful for inspecting what's at the selected cell (e.g. showing details,
+  // future interactions) — not used for deploy flow.
+  const selectedWorldCell = computed((): WorldCell | null => {
+    if (selectedWorldCellCoordinate.value === null) return null;
+    return worldCells.value.get(selectedWorldCellCoordinate.value) ?? null;
   });
 
-  const placeSelectedEntity = () => {
-    if (!canPlaceSelected.value) return;
+  // Optimistically places the selected entity into the selected world cell,
+  // then fires the deploy action over the channel. The server will confirm
+  // (or correct) via a world_cell_update broadcast.
+  const placeSelectedEntity = (
+    coordinate: number,
+    channel: PlayerActionsChannel | undefined
+  ) => {
+    if (!selectedItemIsPlaceable.value) return;
     const item = selectedSlotItem.value!;
-    const cellIndex = selectedWorldCellIndex.value!;
+    const cellCoordinate = coordinate;
+    const slotNumber = selectedSlotIndex.value!;
 
-    worldCells.value[cellIndex] = {
-      index: cellIndex,
+    // Optimistic update — place entity in world cell
+    worldCells.value.set(cellCoordinate, {
+      coordinate: cellCoordinate,
       placedEntity: {
         type: item.type,
         displayName: item.displayName ?? null,
         tooltip: item.tooltip ?? null,
       } as PlacedEntity,
-    };
+    });
+    // Trigger Map reactivity — replace the ref value with a new Map instance
+    worldCells.value = new Map(worldCells.value);
 
-    // Deselect both after placement
+    // Optimistic update — immediately clear the inventory slot.
+    // The server will broadcast an inventory_mutation confirming the removal;
+    // if the deploy fails the server broadcast will restore the item.
+    const rowIndex = Math.floor(slotNumber / inventoryRowLength);
+    const columnIndex = slotNumber % inventoryRowLength;
+    if (
+      inventory.value.rows[rowIndex] &&
+      inventory.value.rows[rowIndex][columnIndex]
+    ) {
+      inventory.value.rows[rowIndex][columnIndex].slot.inventoryItem = null;
+    }
+
+    // Deselect inventory slot
     selectedSlotIndex.value = null;
-    selectedWorldCellIndex.value = null;
+
+    // Fire over the channel — send only the action name, not the full action object
+    if (channel) {
+      channel.send({ name: "deploy" } as PlayerAction, {
+        slotNumber,
+        cellCoordinate,
+      });
+    }
   };
 
-  const removeEntityFromCell = (index: number) => {
-    if (worldCells.value[index]) {
-      worldCells.value[index] = { index, placedEntity: null };
+  const removeEntityFromCell = (
+    coordinate: number,
+    channel: PlayerActionsChannel | undefined
+  ) => {
+    const existing = worldCells.value.get(coordinate);
+    if (existing) {
+      // Optimistic update — clear the world cell immediately.
+      // The server will confirm (or rollback) via a world_cell_update broadcast.
+      worldCells.value.set(coordinate, { coordinate, placedEntity: null });
+      worldCells.value = new Map(worldCells.value);
+
+      // Optimistic update — restore the item to the first empty inventory slot.
+      // The server will confirm (or correct) via an inventory_mutations broadcast.
+      const placedEntity = existing.placedEntity;
+      if (placedEntity) {
+        // Find the first empty slot across all rows
+        let placed = false;
+        outer: for (const row of inventory.value.rows) {
+          for (const gridSlot of row) {
+            if (gridSlot.slot.inventoryItem === null) {
+              gridSlot.slot.inventoryItem = {
+                type: placedEntity.type,
+                count: 1,
+                displayName: placedEntity.displayName ?? null,
+                tooltip: placedEntity.tooltip ?? null,
+              };
+              placed = true;
+              break outer;
+            }
+          }
+        }
+        if (!placed) {
+          // No empty slot found — the server broadcast will handle it.
+          // This is an edge case; the server enforces inventory space too.
+        }
+      }
     }
-    if (selectedWorldCellIndex.value === index) {
-      selectedWorldCellIndex.value = null;
+
+    if (selectedWorldCellCoordinate.value === coordinate) {
+      selectedWorldCellCoordinate.value = null;
+    }
+
+    // Fire recall over the channel
+    if (channel) {
+      channel.send({ name: "recall" } as PlayerAction, {
+        cellCoordinate: coordinate,
+      });
     }
   };
+
+  // Update a single world cell from a server broadcast.
+  const updateWorldCell = (payload: WorldCellUpdatePayload) => {
+    const coordinate =
+      (payload as any).coordinate ?? (payload as any).world_coordinate ?? null;
+    if (coordinate === null) return;
+
+    const rawEntity =
+      (payload as any).placedEntity ?? (payload as any).placed_entity ?? null;
+
+    const placedEntity: PlacedEntity | null = rawEntity
+      ? {
+          type: rawEntity.type ?? null,
+          displayName: rawEntity.displayName ?? rawEntity.display_name ?? null,
+          tooltip: rawEntity.tooltip ?? null,
+        }
+      : null;
+
+    worldCells.value.set(coordinate, { coordinate, placedEntity });
+    worldCells.value = new Map(worldCells.value);
+  };
+
+  // Hydrate the world cell map from the server's initial props or a bulk snapshot.
+  // Each entry should have { coordinate, placedEntity } (or snake_case equivalents).
+  const snapshotWorldCells = (cells: Array<any>) => {
+    const next = new Map<number, WorldCell>(worldCells.value);
+    for (const raw of cells) {
+      const coordinate = raw.coordinate ?? raw.world_coordinate ?? null;
+      if (coordinate === null) continue;
+
+      const rawEntity = raw.placedEntity ?? raw.placed_entity ?? null;
+      const placedEntity: PlacedEntity | null = rawEntity
+        ? {
+            type: rawEntity.type ?? null,
+            displayName:
+              rawEntity.displayName ?? rawEntity.display_name ?? null,
+            tooltip: rawEntity.tooltip ?? null,
+          }
+        : null;
+
+      next.set(coordinate, { coordinate, placedEntity });
+    }
+    worldCells.value = next;
+  };
+
+  // Returns all currently known world cells sorted by coordinate ascending.
+  // Always includes every coordinate in the visible window (as empty cells
+  // if nothing is placed there). If any placed entity lies beyond the window
+  // end, the filled range is extended to that coordinate so there are no gaps
+  // in the rendered list. Components should use this for rendering.
+  const sortedWorldCells = computed((): Array<WorldCell> => {
+    const merged = new Map<number, WorldCell>(worldCells.value);
+
+    // Find the furthest coordinate that has a placed entity, if any.
+    let maxPlacedCoord = windowStart.value + windowSize.value - 1;
+    for (const cell of worldCells.value.values()) {
+      if (cell.placedEntity !== null && cell.coordinate > maxPlacedCoord) {
+        maxPlacedCoord = cell.coordinate;
+      }
+    }
+
+    // Fill every coordinate from windowStart up to and including the furthest
+    // relevant coordinate (window end or a placed entity beyond it).
+    const end = Math.max(
+      windowStart.value + windowSize.value,
+      maxPlacedCoord + 1
+    );
+    for (let coord = windowStart.value; coord < end; coord++) {
+      if (!merged.has(coord)) {
+        merged.set(coord, { coordinate: coord, placedEntity: null });
+      }
+    }
+
+    return Array.from(merged.values()).sort(
+      (a, b) => a.coordinate - b.coordinate
+    );
+  });
 
   const setTooltip = (content: TooltipContent) => {
     hoveredTooltip.value = content;
@@ -281,6 +446,45 @@ export const usePlayerStore = defineStore("player", () => {
     }
   };
 
+  // Scrolls to the first placed entity (with TRIM_LEAD_CELLS empty cells above
+  // it), then trims excess empty cells that were generated by scrolling.
+  // If no placed entities exist, falls back to the default window at coordinate 0.
+  const trimWorldCells = () => {
+    // Find the coordinate of the first (lowest) placed entity.
+    let firstPlacedCoord: number | null = null;
+    for (const cell of worldCells.value.values()) {
+      if (cell.placedEntity !== null) {
+        if (firstPlacedCoord === null || cell.coordinate < firstPlacedCoord) {
+          firstPlacedCoord = cell.coordinate;
+        }
+      }
+    }
+
+    // New window starts TRIM_LEAD_CELLS above the first entity (or default).
+    const newStart =
+      firstPlacedCoord !== null
+        ? firstPlacedCoord - TRIM_LEAD_CELLS
+        : DEFAULT_WINDOW_START;
+
+    windowStart.value = newStart;
+    windowSize.value = DEFAULT_WINDOW_SIZE;
+
+    // Drop map entries that are both outside the new window AND have no
+    // placed entity — they were generated purely by scrolling.
+    const next = new Map<number, WorldCell>();
+    for (const [coord, cell] of worldCells.value) {
+      const inWindow =
+        coord >= newStart && coord < newStart + DEFAULT_WINDOW_SIZE;
+      if (inWindow || cell.placedEntity !== null) {
+        next.set(coord, cell);
+      }
+    }
+    worldCells.value = next;
+
+    // Scroll the WorldGrid viewport so windowStart is at the top.
+    scrollToCoordinate(newStart);
+  };
+
   const snapshotInventory = (slots: Array<InventorySlot>) => {
     for (const serverSlot of slots) {
       // Support both camelCase and snake_case keys from server
@@ -333,17 +537,25 @@ export const usePlayerStore = defineStore("player", () => {
     inventory,
     availableActions,
     selectedSlotIndex,
-    selectedWorldCellIndex,
+    selectedWorldCellCoordinate,
     hoveredTooltip,
     craftingInProgress,
     worldCells,
+    windowStart,
+    windowSize,
+    sortedWorldCells,
     selectSlot,
     selectWorldCell,
     selectedSlotItem,
+    selectedWorldCell,
     selectedItemIsPlaceable,
-    canPlaceSelected,
     placeSelectedEntity,
     removeEntityFromCell,
+    updateWorldCell,
+    snapshotWorldCells,
+    trimWorldCells,
+    registerScrollTo,
+    scrollToCoordinate,
     inventoryTotals,
     canAfford,
     setTooltip,
