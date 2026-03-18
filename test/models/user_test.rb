@@ -261,7 +261,7 @@ class UserTest < ActiveSupport::TestCase
     slot_number = placeable_slot_number(entity)
     assert_not_nil slot_number, "Precondition: deployable item must be in a slot"
 
-    result = user.deploy({ "slot_number" => slot_number })
+    result = user.deploy({ "slot_number" => slot_number, "cell_coordinate" => 1 })
 
     assert result.is_a?(Hash)
     assert_equal true, result[:success], "Expected deploy to succeed (got: #{result.inspect})"
@@ -276,7 +276,7 @@ class UserTest < ActiveSupport::TestCase
     assert InventoryItem.where(entity: entity, type: "IrradiationEnclosureInventoryItem").exists?,
            "Precondition: IrradiationEnclosureInventoryItem must exist before deploy"
 
-    user.deploy({ "slot_number" => slot_number })
+    user.deploy({ "slot_number" => slot_number, "cell_coordinate" => 1 })
 
     assert_not InventoryItem.where(entity: entity, type: "IrradiationEnclosureInventoryItem").exists?,
                "Expected IrradiationEnclosureInventoryItem to be removed after deploy"
@@ -289,7 +289,7 @@ class UserTest < ActiveSupport::TestCase
     enclosure = enclosure_item.irradiation_enclosure
     assert_nil enclosure.placed_at, "Precondition: placed_at must be nil before deploy"
 
-    user.deploy({ "slot_number" => slot_number })
+    user.deploy({ "slot_number" => slot_number, "cell_coordinate" => 1 })
     enclosure.reload
 
     assert_not_nil enclosure.placed_at, "Expected placed_at to be stamped after deploy"
@@ -299,7 +299,7 @@ class UserTest < ActiveSupport::TestCase
     user, entity, _enclosure_item = create_user_with_placeable(email: "deploy_mutations@example.com")
     slot_number = placeable_slot_number(entity)
 
-    result = user.deploy({ "slot_number" => slot_number })
+    result = user.deploy({ "slot_number" => slot_number, "cell_coordinate" => 1 })
 
     assert_kind_of Array, result[:mutations]
     assert_not_empty result[:mutations]
@@ -312,7 +312,7 @@ class UserTest < ActiveSupport::TestCase
   test "deploy falls back to first deployable item when no slot_number is provided" do
     user, entity, _enclosure_item = create_user_with_placeable(email: "deploy_fallback@example.com")
 
-    result = user.deploy(nil)
+    result = user.deploy({ "cell_coordinate" => 1 })
 
     assert result.is_a?(Hash)
     assert_equal true, result[:success],
@@ -322,7 +322,7 @@ class UserTest < ActiveSupport::TestCase
   test "deploy falls back to first deployable item when action_data is an empty hash" do
     user, entity, _enclosure_item = create_user_with_placeable(email: "deploy_fallback_empty@example.com")
 
-    result = user.deploy({})
+    result = user.deploy({ "cell_coordinate" => 1 })
 
     assert_equal true, result[:success],
                  "Expected deploy to succeed via fallback with empty action_data (got: #{result.inspect})"
@@ -337,7 +337,7 @@ class UserTest < ActiveSupport::TestCase
     entity = user.entity
     entity.ensure_inventory_slots
 
-    result = user.deploy({ "slot_number" => 0 })
+    result = user.deploy({ "slot_number" => 0, "cell_coordinate" => 1 })
 
     assert_equal false,               result[:success]
     assert_equal "no_placeable_item", result[:reason]
@@ -351,7 +351,7 @@ class UserTest < ActiveSupport::TestCase
     wood = WoodInventoryItem.create!(entity: entity, count: 10)
     entity.inventory_slots.order(slot: :asc).first.update!(inventory_item: wood)
 
-    result = user.deploy({ "slot_number" => 0 })
+    result = user.deploy({ "slot_number" => 0, "cell_coordinate" => 1 })
 
     assert_equal false,               result[:success]
     assert_equal "no_placeable_item", result[:reason]

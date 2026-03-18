@@ -187,8 +187,15 @@ class User < ApplicationRecord
     end
 
     if slot_number.nil?
-      Rails.logger.warn("User#deploy: missing slot_number for user=#{id}")
-      return { success: false, reason: "no_slot_number" }
+      # Fall back to the first slot containing a placeable item
+      fallback_slot = entity.inventory_slots.includes(:inventory_item).order(slot: :asc).detect do |s|
+        s.inventory_item&.placeable?
+      end
+      if fallback_slot.nil?
+        Rails.logger.warn("User#deploy: no placeable item found for user=#{id}")
+        return { success: false, reason: "no_placeable_item" }
+      end
+      slot_number = fallback_slot.slot
     end
 
     cell_coordinate = cell_coordinate.to_i
