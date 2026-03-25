@@ -5,6 +5,12 @@ import type { WorldCell } from "@/types/index.ts";
 import { usePlayerStore } from "@/store/player.ts";
 import WorldCellSlot from "@/Shared/WorldCellSlot.vue";
 import PlayerActionsChannel from "@/channels/playerActions.ts";
+import {
+  PAGE_SIZE,
+  CELL_HEIGHT,
+  SCROLL_THRESHOLD,
+  SENTINEL_HEIGHT,
+} from "@/Layouts/worldGridConstants.ts";
 
 const props = defineProps<{
   channel: PlayerActionsChannel | undefined;
@@ -13,13 +19,6 @@ const props = defineProps<{
 const store = usePlayerStore();
 const { sortedWorldCells, windowStart, windowSize, worldCells } =
   storeToRefs(store);
-
-// How many cells to add each time the user scrolls to an edge.
-const PAGE_SIZE = 16;
-// Each cell is 48px tall with a 2px gap below it.
-const CELL_HEIGHT = 50;
-// How many pixels from the edge triggers an expansion.
-const SCROLL_THRESHOLD = CELL_HEIGHT * 4;
 
 const scrollEl = ref<HTMLElement | null>(null);
 
@@ -66,10 +65,6 @@ const hasDeployedBelowWindow = computed((): boolean => {
   }
   return false;
 });
-
-// Height of the sentinel buffer prepended on mount so the user can scroll
-// upward immediately. Equals exactly one page worth of cells.
-const SENTINEL_HEIGHT = PAGE_SIZE * CELL_HEIGHT;
 
 type TickKind = "major" | "minor" | "normal";
 

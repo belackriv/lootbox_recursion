@@ -3,6 +3,12 @@ import { mount, flushPromises } from "@vue/test-utils";
 import { createPinia, setActivePinia } from "pinia";
 import { nextTick } from "vue";
 import WorldGrid from "../../../Layouts/WorldGrid.vue";
+import {
+  PAGE_SIZE,
+  CELL_HEIGHT,
+  SENTINEL_HEIGHT,
+  SCROLL_THRESHOLD,
+} from "../../../Layouts/worldGridConstants";
 import { usePlayerStore } from "../../../store/player";
 
 // ── Stubs ─────────────────────────────────────────────────────────────────────
@@ -19,13 +25,7 @@ function globalConfig(pinia: ReturnType<typeof createPinia>) {
   };
 }
 
-// ── Scroll geometry constants (must mirror WorldGrid.vue) ─────────────────────
-
-// CELL_HEIGHT (48px) + gap (2px) = 50px per row
-const CELL_HEIGHT = 50;
-const PAGE_SIZE = 16;
-const SENTINEL_HEIGHT = PAGE_SIZE * CELL_HEIGHT; // 800px
-const SCROLL_THRESHOLD = CELL_HEIGHT * 4; // 200px
+// ── Scroll geometry constants (imported from worldGridConstants.ts) ───────────
 
 // ── Scroll element helper ─────────────────────────────────────────────────────
 
