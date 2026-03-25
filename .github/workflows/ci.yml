@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
@@ -24,7 +24,7 @@ jobs:
       - name: Scan for common Rails security vulnerabilities using static analysis
         run: bin/brakeman --no-pager
 
-      - name: Ensure brakeman is executable
+      - name: Ensure bundler-audit is executable
         run: chmod +x bin/bundler-audit
 
       - name: Scan for known security vulnerabilities in gems used
@@ -35,7 +35,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
@@ -54,7 +54,7 @@ jobs:
       RUBOCOP_CACHE_ROOT: tmp/rubocop
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up Ruby
         uses: ruby/setup-ruby@v1
@@ -109,7 +109,7 @@ jobs:
       PGDATABASE: lootbox_recursion_test
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up Node
         uses: actions/setup-node@v4
@@ -121,7 +121,7 @@ jobs:
         run: npm ci
 
       - name: Build Vite assets
-        run: npm run build
+        run: RAILS_ENV=test npm run build
 
       - name: Run Vitest
         run: npm run test -- --run
@@ -180,7 +180,7 @@ jobs:
       PGDATABASE: lootbox_recursion_test
     steps:
       - name: Checkout code
-        uses: actions/checkout@v5
+        uses: actions/checkout@v6
 
       - name: Set up Node
         uses: actions/setup-node@v4

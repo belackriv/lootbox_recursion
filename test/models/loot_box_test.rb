@@ -120,10 +120,6 @@ class LootBoxTest < ActiveSupport::TestCase
     # Attempt to craft; since there is no available slot the transaction should rollback
     result = LootBox.craft(user, {})
 
-    # Debugging: inspect the returned structure and inventory state when failure occurs
-    puts "craft result: #{result.inspect}"
-    puts "inventory items summary: Wood=#{entity.inventory_items.where(type: 'WoodInventoryItem').sum(:count)} Iron=#{entity.inventory_items.where(type: 'IronInventoryItem').sum(:count)} LootBoxItems=#{entity.inventory_items.where(type: 'LootBoxInventoryItem').count}"
-
     assert result.is_a?(Hash)
     assert_equal false, result[:success], "Expected craft to fail due to no available slot"
 
@@ -169,10 +165,6 @@ class LootBoxTest < ActiveSupport::TestCase
     iron_before = entity.inventory_items.where(type: "IronInventoryItem").sum(:count)
 
     result = LootBox.craft(user, {})
-
-    # Debugging info for failed craft due to insufficient materials
-    puts "craft result (insufficient materials test): #{result.inspect}"
-    puts "inventory items after attempt: Wood=#{entity.inventory_items.where(type: 'WoodInventoryItem').sum(:count)}, Iron=#{entity.inventory_items.where(type: 'IronInventoryItem').sum(:count)}"
 
     assert result.is_a?(Hash)
     assert_equal false, result[:success], "Expected craft to fail due to insufficient materials"
@@ -239,22 +231,6 @@ class LootBoxTest < ActiveSupport::TestCase
 
     # Run craft and capture the result for inspection on failure
     result = LootBox.craft(user, {})
-
-    # If craft failed unexpectedly, output detailed debug info to help identify the cause
-    unless result[:success]
-      puts "craft result in next-slot test: #{result.inspect}"
-      puts "Mutations returned: #{result[:mutations].map { |m| { item_type: m.item_type, delta: m.delta, slot: m.inventory_slot&.slot } }.inspect}"
-      puts "Slots state after craft:"
-      entity.inventory_slots.order(slot: :asc).each do |s|
-        puts "slot=#{s.slot} item_id=#{s.inventory_item&.id} item_type=#{s.inventory_item&.type} item_count=#{s.inventory_item&.count} loot_box_id=#{s.inventory_item&.loot_box_id}"
-      end
-      # Also dump top-level inventory items for clarity
-      puts "Inventory items summary:"
-      entity.inventory_items.order(:id).each do |it|
-        puts "item id=#{it.id} type=#{it.type} count=#{it.count} slot_id=#{it.inventory_slot&.slot} loot_box_id=#{it.respond_to?(:loot_box_id) ? it.loot_box_id : nil}"
-      end
-    end
-
     assert result[:success], "Expected craft to succeed when another slot is available"
 
     # The LootBoxInventoryItem may be placed into any available slot except the first_slot
