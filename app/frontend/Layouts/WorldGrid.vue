@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, nextTick, onMounted } from "vue";
+import { computed, ref, nextTick, onMounted, watch } from "vue";
 import { storeToRefs } from "pinia";
 import type { WorldCell } from "@/types/index.ts";
 import { usePlayerStore } from "@/store/player.ts";
@@ -11,7 +11,8 @@ const props = defineProps<{
 }>();
 
 const store = usePlayerStore();
-const { sortedWorldCells, windowStart, windowSize } = storeToRefs(store);
+const { sortedWorldCells, windowStart, windowSize, worldCells } =
+  storeToRefs(store);
 
 // How many cells to add each time the user scrolls to an edge.
 const PAGE_SIZE = 16;
@@ -21,6 +22,50 @@ const CELL_HEIGHT = 50;
 const SCROLL_THRESHOLD = CELL_HEIGHT * 4;
 
 const scrollEl = ref<HTMLElement | null>(null);
+
+// Tracks the first and last coordinate indices visible in the scroll viewport.
+// Updated on every scroll event and whenever sortedWorldCells changes (e.g.
+// after a deploy/remove that shifts the list).
+const firstVisibleIndex = ref<number>(0);
+const lastVisibleIndex = ref<number>(0);
+
+function updateVisibleRange() {
+  const el = scrollEl.value;
+  if (!el) return;
+  const { scrollTop, clientHeight } = el;
+  firstVisibleIndex.value = Math.floor(scrollTop / CELL_HEIGHT);
+  lastVisibleIndex.value = Math.floor(
+    (scrollTop + clientHeight - 1) / CELL_HEIGHT
+  );
+}
+
+// Recompute the visible range whenever sortedWorldCells changes so indicators
+// update immediately after a deploy/remove without needing a scroll event.
+watch(sortedWorldCells, () => {
+  nextTick(updateVisibleRange);
+});
+
+const hasDeployedAboveWindow = computed((): boolean => {
+  const cells = sortedWorldCells.value;
+  const firstIdx = firstVisibleIndex.value;
+  for (const cell of worldCells.value.values()) {
+    if (cell.placedEntity === null) continue;
+    const idx = cells.findIndex((c) => c.coordinate === cell.coordinate);
+    if (idx !== -1 && idx < firstIdx) return true;
+  }
+  return false;
+});
+
+const hasDeployedBelowWindow = computed((): boolean => {
+  const cells = sortedWorldCells.value;
+  const lastIdx = lastVisibleIndex.value;
+  for (const cell of worldCells.value.values()) {
+    if (cell.placedEntity === null) continue;
+    const idx = cells.findIndex((c) => c.coordinate === cell.coordinate);
+    if (idx !== -1 && idx > lastIdx) return true;
+  }
+  return false;
+});
 
 // Height of the sentinel buffer prepended on mount so the user can scroll
 // upward immediately. Equals exactly one page worth of cells.
@@ -64,6 +109,7 @@ onMounted(async () => {
     await nextTick();
     if (!scrollEl.value) return;
     scrollEl.value.scrollTop = coordinateToScrollTop(coordinate);
+    updateVisibleRange();
   });
 
   windowStart.value -= PAGE_SIZE;
@@ -71,9 +117,11 @@ onMounted(async () => {
   if (scrollEl.value) {
     scrollEl.value.scrollTop = SENTINEL_HEIGHT;
   }
+  updateVisibleRange();
 });
 
 async function onScroll() {
+  updateVisibleRange();
   const el = scrollEl.value;
   if (!el) return;
 
@@ -107,6 +155,24 @@ async function onScroll() {
 
 <template>
   <div class="world-grid">
+    <!-- Overflow indicators overlay — sits above the scroll container, pinned to the ruler strip -->
+    <div class="ruler-overlay" aria-hidden="true">
+      <div
+        class="ruler__overflow-indicator ruler__overflow-indicator--above"
+        :class="{ 'ruler__overflow-indicator--active': hasDeployedAboveWindow }"
+        title="Deployed entity above visible area"
+      >
+        ▲
+      </div>
+      <div
+        class="ruler__overflow-indicator ruler__overflow-indicator--below"
+        :class="{ 'ruler__overflow-indicator--active': hasDeployedBelowWindow }"
+        title="Deployed entity below visible area"
+      >
+        ▼
+      </div>
+    </div>
+
     <!-- Scroll viewport -->
     <div ref="scrollEl" class="world-grid__body" @scroll.passive="onScroll">
       <!-- Scroll content: ruler + cell list side by side -->
@@ -139,6 +205,7 @@ async function onScroll() {
 <style scoped>
 /* ---------- layout shell ---------- */
 .world-grid {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -164,6 +231,53 @@ async function onScroll() {
 .world-grid__body {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* ---------- ruler overflow indicators ---------- */
+.ruler-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 14px;
+  height: 100%;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.ruler__overflow-indicator {
+  position: absolute;
+  left: 2px;
+  width: 100%;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: transparent;
+  transition: color 0.2s ease, opacity 0.2s ease;
+}
+
+.ruler__overflow-indicator--above {
+  top: 0;
+}
+
+.ruler__overflow-indicator--below {
+  bottom: 0;
+}
+
+.ruler__overflow-indicator--active {
+  color: var(--color-fac-orange, #e8a020);
+  animation: indicator-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes indicator-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
 }
 
 /* ---------- ruler ---------- */

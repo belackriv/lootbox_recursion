@@ -11,7 +11,7 @@ import { usePlayerStore } from "@/store/player.ts";
 import PlayerActionsChannel from "@/channels/playerActions.ts";
 import { inject } from "vue";
 
-const ACTION_PANEL_WHITELIST = ["scavenge", "craft", "use", "sort_inventory"];
+const ACTION_PANEL_WHITELIST = ["scavenge", "craft", "use"];
 
 const props = defineProps<{
   actions: Array<PlayerAction>;
@@ -43,18 +43,16 @@ watch(
   { immediate: true, deep: true }
 );
 
-const renderedActions = computed(() =>
+const normalActions = computed(() =>
   (availableActions.value ?? []).filter((a) =>
     ACTION_PANEL_WHITELIST.includes(a.name)
   )
 );
 
 const sortAction = computed(
-  () => renderedActions.value.find((a) => a.name === "sort_inventory") ?? null
-);
-
-const nonSortActions = computed(() =>
-  renderedActions.value.filter((a) => a.name !== "sort_inventory")
+  () =>
+    (availableActions.value ?? []).find((a) => a.name === "sort_inventory") ??
+    null
 );
 </script>
 
@@ -64,7 +62,7 @@ const nonSortActions = computed(() =>
     <div class="fac-panel" style="align-self: flex-start; width: 420px">
       <div class="fac-title-bar">◈ Actions</div>
       <div style="padding: 8px">
-        <ActionBar :actions="nonSortActions" />
+        <ActionBar :actions="normalActions" />
       </div>
     </div>
 
